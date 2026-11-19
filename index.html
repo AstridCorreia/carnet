@@ -1,0 +1,2337 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f6dfe5">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Carnet">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<title>Carnet d'entraînement</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,700;1,9..144,600&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* =====================================================================
+   PARTIE 1 : LE STYLE (CSS)
+   Idée de mise en page : carnet mobile à une colonne, barre d'onglets
+   en bas (accessible au pouce), cartes empilées, chiffres en police
+   condensée. Toutes les couleurs passent par des "tokens" (variables
+   CSS) pour que le mode sombre change tout d'un coup.
+   ===================================================================== */
+:root {
+  /* Palette : rose framboise, rose poudré, beige sable */
+  --bg: #fbf3ee;          /* fond beige rosé */
+  --surface: #fffaf7;     /* cartes */
+  --surface-2: #f6e7e1;   /* champs */
+  --ink: #3e2a30;         /* texte (prune très foncé) */
+  --ink-2: #6f535a;
+  --ink-3: #94777f;
+  --line: #efd8d1;
+  --accent: #c2477a;      /* rose framboise : boutons */
+  --accent-ink: #ffffff;
+  --accent-soft: #fbe2ea;
+  --warn: #9a5520; --warn-bg: #fdebd6;
+  --danger: #b8384a; --danger-bg: #fbe3e5;
+  --good: #3f8460; --good-bg: #e3f1e7;
+  --heart: #e0517f;       /* cœurs du ressenti */
+  /* 8 couleurs douces pour les types de séance */
+  --c1: #e0739a; --c2: #e38c4f; --c3: #4f9d76; --c4: #c9962a;
+  --c5: #b064c9; --c6: #4f8fc8; --c7: #7b6bd6; --c8: #d65a5a;
+  /* couleurs des dessins */
+  --art-pink: #f2a7bf; --art-rose: #d9668f; --art-blush: #fbd9e3; --art-beige: #f3e3d7; --art-cream: #fffaf5; --art-gold: #e8b65c; --art-leaf: #9cc2a5;
+  --font-display: "Fraunces", Georgia, "Times New Roman", serif;
+  --font-body: "Nunito", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --r: 20px;
+  --shadow: 0 1px 2px rgba(120,60,80,.05), 0 6px 18px rgba(194,71,122,.07);
+  color-scheme: light;
+}
+/* Mode sombre automatique (réglage du téléphone), sauf si on a forcé "clair" */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not([data-mode="light"]) {
+    --bg: #1d1518; --surface: #281d21; --surface-2: #33262b; --ink: #f7eaee; --ink-2: #d9c2c9; --ink-3: #ab929a; --line: #45333a;
+    --accent: #f191b3; --accent-ink: #2a1019; --accent-soft: #4a2533;
+    --warn: #f4b77a; --warn-bg: #3b2814; --danger: #ff8f8f; --danger-bg: #3d1a1d; --good: #8fcfa6; --good-bg: #183224;
+    --heart: #f27aa3;
+    --c1: #ee86aa; --c2: #f0a774; --c3: #7fc39e; --c4: #e5bd55; --c5: #c792e0; --c6: #74b3e3; --c7: #a597ec; --c8: #ec7878;
+    --art-pink: #e27da1; --art-rose: #b9557c; --art-blush: #5a3441; --art-beige: #3a2c2f; --art-cream: #f7e7dc; --art-gold: #e9c27a; --art-leaf: #7fae8e;
+    --shadow: none; color-scheme: dark;
+  }
+}
+/* Mode sombre demandé par l'appli Claude ou forcé par toi */
+:root[data-theme="dark"]:not([data-mode="light"]), :root[data-mode="dark"] {
+  --bg: #1d1518; --surface: #281d21; --surface-2: #33262b; --ink: #f7eaee; --ink-2: #d9c2c9; --ink-3: #ab929a; --line: #45333a;
+    --accent: #f191b3; --accent-ink: #2a1019; --accent-soft: #4a2533;
+    --warn: #f4b77a; --warn-bg: #3b2814; --danger: #ff8f8f; --danger-bg: #3d1a1d; --good: #8fcfa6; --good-bg: #183224;
+    --heart: #f27aa3;
+    --c1: #ee86aa; --c2: #f0a774; --c3: #7fc39e; --c4: #e5bd55; --c5: #c792e0; --c6: #74b3e3; --c7: #a597ec; --c8: #ec7878;
+    --art-pink: #e27da1; --art-rose: #b9557c; --art-blush: #5a3441; --art-beige: #3a2c2f; --art-cream: #f7e7dc; --art-gold: #e9c27a; --art-leaf: #7fae8e;
+    --shadow: none; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--font-body); font-size: 17px; line-height: 1.45;
+  -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transparent;
+  padding-bottom: calc(84px + env(safe-area-inset-bottom));
+}
+h1, h2, h3 { font-family: var(--font-display); letter-spacing: .01em; line-height: 1.1; text-wrap: balance; margin: 0; }
+h1 { font-size: 32px; font-weight: 700; }
+h2 { font-size: 23px; font-weight: 600; }
+h3 { font-size: 20px; font-weight: 600; }
+h1 em, h2 em { color: var(--accent); }
+p { margin: 0; }
+.num, input, .tab-num { font-variant-numeric: tabular-nums; }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+/* ---- En-tête ---- */
+.top { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 10px;
+  padding: 10px 16px; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line); }
+.brand { font-family: var(--font-display); font-weight: 700; font-style: italic; font-size: 24px; background: none; border: 0; padding: 4px 0; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+.brand svg { width: 22px; height: 22px; color: var(--heart); }
+.brand { white-space: nowrap; }
+.brand span { color: var(--accent); }
+@media (max-width: 520px) { .brand > span { display: none; } }
+.sync { margin-left: auto; white-space: nowrap; font-size: 13px; font-weight: 600; padding: 5px 10px; border-radius: 999px; background: var(--surface-2); color: var(--ink-2); border: 0; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+.sync::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--ink-3); }
+.sync.ok::before { background: var(--good); }
+.sync.busy::before { background: var(--accent); }
+.sync.warn { background: var(--warn-bg); color: var(--warn); }
+.sync.warn::before { background: var(--warn); }
+.icon-btn { width: 40px; height: 40px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); display: grid; place-items: center; cursor: pointer; flex: none; }
+.icon-btn svg { width: 20px; height: 20px; }
+
+/* ---- Structure ---- */
+main { max-width: 720px; margin: 0 auto; padding: 16px; display: flex; flex-direction: column; gap: 16px; }
+.banner { max-width: 720px; margin: 10px auto 0; padding: 0 16px; }
+.banner > div { background: var(--warn-bg); color: var(--warn); border-radius: 12px; padding: 10px 14px; font-size: 15px; display: flex; gap: 10px; align-items: flex-start; }
+.banner button { margin-left: auto; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 12px; }
+.section-title { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.muted { color: var(--ink-3); }
+.small { font-size: 14px; }
+.row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.grow { flex: 1; }
+.stack { display: flex; flex-direction: column; gap: 10px; }
+
+/* ---- Boutons ---- */
+.btn { min-height: 48px; padding: 10px 18px; border-radius: 999px; border: 1px solid transparent; background: var(--accent); color: var(--accent-ink);
+  font-weight: 700; font-size: 17px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-align: center; }
+.btn:active { transform: translateY(1px); }
+.btn.ghost { background: var(--surface); color: var(--ink); border-color: var(--line); }
+.btn.soft { background: var(--accent-soft); color: var(--accent); }
+.btn.danger { background: var(--danger-bg); color: var(--danger); }
+.btn.block { width: 100%; }
+.btn.sm { min-height: 40px; padding: 6px 14px; font-size: 15px; }
+.btn svg { width: 18px; height: 18px; flex: none; }
+.btn[disabled] { opacity: .5; cursor: default; }
+.link { background: none; border: 0; color: var(--accent); font-weight: 600; padding: 8px 0; cursor: pointer; text-align: left; }
+
+/* ---- Champs ---- */
+input[type="text"], input[type="date"], input[type="email"], input[type="password"], input:not([type]), select, textarea {
+  width: 100%; min-height: 48px; padding: 10px 14px; border-radius: 14px; border: 1px solid var(--line); background: var(--surface-2); font-size: 17px; }
+textarea { resize: none; overflow: hidden; field-sizing: content; min-height: 72px; line-height: 1.4; }
+input::placeholder, textarea::placeholder { color: var(--ink-3); opacity: .85; }
+.invalid { border-color: var(--danger) !important; background: var(--danger-bg) !important; }
+label.field { display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 15px; color: var(--ink-2); }
+label.field .opt { font-weight: 400; color: var(--ink-3); }
+.hint { font-size: 14px; color: var(--danger); }
+.toggle { display: flex; align-items: center; gap: 12px; min-height: 44px; font-weight: 600; cursor: pointer; }
+.toggle input { width: 24px; height: 24px; accent-color: var(--accent); flex: none; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+/* ---- Puces / pastilles ---- */
+.chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.chip { min-height: 38px; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); font-size: 15px; font-weight: 600; cursor: pointer; color: var(--ink-2); }
+.chip[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.badge { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; padding: 3px 9px; border-radius: 999px; }
+.badge.warn { background: var(--warn-bg); color: var(--warn); }
+.badge.good { background: var(--good-bg); color: var(--good); }
+.badge svg { width: 14px; height: 14px; }
+.dot { width: 10px; height: 10px; border-radius: 50%; background: var(--c, var(--ink-3)); flex: none; display: inline-block; }
+.seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; background: var(--surface-2); border-radius: 12px; padding: 4px; gap: 4px; }
+.seg button { min-height: 40px; border: 0; border-radius: 9px; background: transparent; font-weight: 600; cursor: pointer; color: var(--ink-2); }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: var(--shadow); }
+
+/* ---- Accueil ---- */
+.hello { display: flex; flex-direction: column; gap: 4px; padding-top: 4px; }
+.type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.type-btn { position: relative; text-align: left; min-height: 92px; padding: 14px 14px 12px 18px; border-radius: var(--r); border: 1px solid var(--line);
+  background: var(--surface); cursor: pointer; display: flex; flex-direction: column; justify-content: space-between; gap: 6px; box-shadow: var(--shadow); overflow: hidden; }
+.type-btn::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 5px; background: var(--c); }
+.type-btn b { font-family: var(--font-display); font-size: 21px; font-weight: 600; line-height: 1.1; position: relative; z-index: 1; }
+.type-btn span { position: relative; z-index: 1; }
+.type-btn .art { position: absolute; right: 8px; bottom: 6px; width: 46px; height: 46px; opacity: .95; z-index: 0; }
+.type-btn::after { content: ""; position: absolute; right: -18px; top: -18px; width: 70px; height: 70px; border-radius: 50%; background: var(--c); opacity: .13; }
+.type-btn span { font-size: 14px; color: var(--ink-3); }
+.resume { border-color: var(--art-pink); background: var(--accent-soft); }
+.tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.tile { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; }
+.tile b { display: block; font-family: var(--font-display); font-size: 28px; font-weight: 700; line-height: 1.05; color: var(--accent); }
+.tile span { font-size: 13px; color: var(--ink-3); }
+.list { display: flex; flex-direction: column; }
+.li { display: flex; gap: 10px; align-items: center; padding: 10px 0; border-top: 1px solid var(--line); }
+.li:first-child { border-top: 0; }
+
+/* ---- Séance (éditeur) ---- */
+.ed-head { display: flex; flex-direction: column; gap: 10px; }
+.ed-title { display: flex; align-items: center; gap: 10px; }
+.ed-title h1 { font-size: 32px; }
+.ex.flag { border-color: var(--warn); }
+.ex-head { display: flex; align-items: center; gap: 8px; }
+.ex-name { font-family: var(--font-display); font-weight: 600; font-size: 21px !important; background: transparent !important; border-color: transparent !important; padding: 4px 6px !important; min-height: 40px !important; margin-left: -6px; }
+.ex-name:focus { border-color: var(--line) !important; background: var(--surface-2) !important; }
+.ex-count { font-size: 14px; font-weight: 700; color: var(--ink-3); white-space: nowrap; }
+.ex-tools { display: flex; gap: 6px; align-items: center; border-top: 1px solid var(--line); padding-top: 12px; }
+.ex-tools button:disabled { opacity: .35; }
+.ex-tools .del { width: auto !important; padding: 0 12px; gap: 6px; display: inline-flex !important; align-items: center; font-weight: 600; font-size: 15px; background: var(--danger-bg) !important; }
+.ex-tools button { width: 42px; height: 40px; border-radius: 10px; border: 0; background: var(--surface-2); display: grid; place-items: center; cursor: pointer; color: var(--ink-2); }
+.ex-tools button svg { width: 18px; height: 18px; }
+.ex-tools .del { color: var(--danger); }
+.consigne { background: var(--accent-soft); color: var(--ink); border-radius: 10px; padding: 9px 12px; font-size: 15px; display: flex; gap: 8px; align-items: flex-start; }
+.consigne svg { width: 18px; height: 18px; flex: none; margin-top: 2px; color: var(--accent); }
+.flagnote { background: var(--warn-bg); color: var(--warn); border-radius: 10px; padding: 9px 12px; font-size: 15px; display: flex; gap: 8px; }
+.flagnote svg { width: 18px; height: 18px; flex: none; margin-top: 2px; }
+.last { border-left: 3px solid var(--line); padding: 2px 0 2px 10px; font-size: 15px; color: var(--ink-2); display: flex; flex-direction: column; gap: 2px; }
+.last b { color: var(--ink); }
+.last .q { font-style: italic; color: var(--ink-3); }
+.sets { display: flex; flex-direction: column; gap: 6px; }
+.set { display: grid; grid-template-columns: 26px 1fr 1fr 52px 36px; gap: 8px; align-items: center; }
+.set-h { font-size: 13px; font-weight: 700; color: var(--ink-3); text-transform: uppercase; letter-spacing: .04em; }
+.set-n { font-family: var(--font-display); font-size: 19px; color: var(--ink-3); text-align: center; }
+.set input { text-align: center; font-size: 20px; font-weight: 600; padding: 8px 4px; min-height: 52px; }
+.set .check { height: 52px; border-radius: 12px; border: 2px solid var(--line); background: var(--surface); display: grid; place-items: center; cursor: pointer; color: var(--ink-3); }
+.set .check svg { width: 24px; height: 24px; }
+.set.done .check { background: var(--good); border-color: var(--good); color: #fff; }
+.set.done input { background: var(--good-bg); border-color: transparent; }
+.set .x { height: 40px; border: 0; background: none; color: var(--ink-3); cursor: pointer; display: grid; place-items: center; }
+.set .x svg { width: 18px; height: 18px; }
+.stars { display: flex; gap: 4px; }
+.stars button { width: 44px; height: 44px; border: 0; background: none; cursor: pointer; color: var(--line); padding: 0; display: grid; place-items: center; }
+.stars button.on { color: var(--heart); }
+.stars button:active svg { transform: scale(1.2); }
+.stars svg { width: 30px; height: 30px; }
+.lbl { font-size: 13px; font-weight: 700; color: var(--ink-3); text-transform: uppercase; letter-spacing: .05em; }
+.inc-amt { display: inline-flex; gap: 8px; align-items: center; }
+.inc-amt input { width: 84px; text-align: center; }
+.inc-amt select { width: auto; min-width: 120px; }
+.pace { font-family: var(--font-display); font-size: 22px; font-weight: 700; color: var(--accent); }
+/* ---- Dessins ---- */
+.hero { position: relative; display: grid; grid-template-columns: 1fr 132px; align-items: center; gap: 8px; background: linear-gradient(135deg, var(--art-blush), var(--art-beige)); border-radius: 26px; padding: 18px 12px 18px 20px; overflow: hidden; }
+.hero h1 { font-size: 28px; }
+.hero svg { width: 132px; height: auto; }
+.art-empty { display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; padding: 14px 6px; color: var(--ink-3); }
+.art-empty svg { width: 86px; height: auto; }
+.card-art { display: flex; align-items: center; gap: 10px; }
+.card-art svg { width: 38px; height: 38px; flex: none; }
+.wmode { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; background: var(--surface-2); border-radius: 999px; padding: 4px; }
+.wmode button { min-height: 36px; border: 0; border-radius: 999px; background: transparent; font-weight: 700; font-size: 14px; color: var(--ink-2); cursor: pointer; }
+.wmode button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+.barrow { display: flex; align-items: center; gap: 10px; font-size: 15px; color: var(--ink-2); flex-wrap: wrap; }
+.barrow input { width: 90px; min-height: 42px; text-align: center; }
+.totline { font-size: 14px; color: var(--ink-3); }
+.durbox { background: var(--accent-soft); border-radius: 16px; padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; }
+.durbox b { font-family: var(--font-display); font-size: 22px; color: var(--accent); }
+.version { text-align: center; font-size: 13px; color: var(--ink-3); display: flex; flex-direction: column; align-items: center; gap: 6px; padding-bottom: 8px; }
+.version svg { width: 60px; }
+.sticky-actions { display: flex; flex-direction: column; gap: 10px; }
+
+/* ---- Historique ---- */
+.srow { width: 100%; display: flex; align-items: center; gap: 12px; padding: 12px 4px; border: 0; border-top: 1px solid var(--line); background: none; text-align: left; cursor: pointer; }
+.srow:first-child { border-top: 0; }
+.srow-main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.srow-main b { font-size: 17px; }
+.srow-main span { font-size: 14px; color: var(--ink-3); overflow: hidden; text-overflow: ellipsis; }
+.srow .date { font-family: var(--font-display); font-size: 18px; font-weight: 700; color: var(--ink-2); width: 52px; flex: none; line-height: 1; text-align: center; }
+.srow .date small { display: block; font-size: 13px; font-family: var(--font-body); font-weight: 600; color: var(--ink-3); text-transform: uppercase; }
+.cal-head { display: flex; align-items: center; justify-content: space-between; }
+.cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; }
+.cal .dow { font-size: 12px; font-weight: 700; color: var(--ink-3); padding: 4px 0; }
+.cal button { aspect-ratio: 1 / 1; min-height: 40px; border-radius: 10px; border: 1px solid transparent; background: var(--surface-2); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-weight: 600; font-size: 15px; padding: 0; color: var(--ink-2); }
+.cal button.out { background: transparent; color: var(--ink-3); opacity: .5; }
+.cal button.today { border-color: var(--accent); color: var(--accent); }
+.cal button.sel { background: var(--accent-soft); }
+.cal .dots { display: flex; gap: 2px; height: 7px; }
+.cal .dots i { width: 7px; height: 7px; border-radius: 50%; background: var(--c); }
+
+/* ---- Graphiques ---- */
+.chart { position: relative; width: 100%; min-height: 60px; touch-action: pan-y; }
+.chart svg { display: block; overflow: visible; }
+.chart .tip { position: absolute; pointer-events: none; background: var(--ink); color: var(--bg); border-radius: 8px; padding: 6px 10px; font-size: 13px; line-height: 1.3; white-space: nowrap; transform: translate(-50%, -100%); top: 0; display: none; z-index: 2; }
+.chart .tip b { font-size: 16px; display: block; }
+.empty { color: var(--ink-3); font-size: 15px; padding: 12px 0; }
+details summary { cursor: pointer; font-weight: 600; color: var(--accent); min-height: 40px; display: flex; align-items: center; }
+table.data { width: 100%; border-collapse: collapse; font-size: 15px; font-variant-numeric: tabular-nums; }
+table.data th, table.data td { padding: 7px 6px; border-bottom: 1px solid var(--line); text-align: left; }
+table.data th { font-size: 13px; color: var(--ink-3); font-weight: 700; }
+.tbl-wrap { overflow-x: auto; }
+
+/* ---- Onglets du bas ---- */
+.tabs { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; display: grid; grid-template-columns: repeat(5, 1fr);
+  background: var(--surface); border-top: 1px solid var(--line); padding: 6px 6px calc(6px + env(safe-area-inset-bottom)); }
+.tabs button { border: 0; background: none; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 0; min-height: 56px; font-size: 12px; font-weight: 600; color: var(--ink-3); cursor: pointer; border-radius: 10px; }
+.tabs button svg { width: 24px; height: 24px; }
+.tabs button[aria-current="page"] { color: var(--accent); background: var(--accent-soft); border-radius: 16px; }
+
+/* ---- Toast + fenêtres ---- */
+#toasts { position: fixed; left: 12px; right: 12px; bottom: calc(86px + env(safe-area-inset-bottom)); z-index: 60; display: flex; justify-content: center; pointer-events: none; }
+.toast { pointer-events: auto; max-width: 520px; width: 100%; background: var(--ink); color: var(--bg); border-radius: 14px; padding: 10px 10px 10px 16px; display: flex; align-items: center; gap: 12px; font-weight: 600; font-size: 15px; box-shadow: 0 8px 24px rgba(0,0,0,.25); }
+.toast.err { background: var(--danger); color: #fff; }
+.toast button { margin-left: auto; min-height: 40px; padding: 6px 14px; border-radius: 10px; border: 0; background: var(--accent); color: var(--accent-ink); font-weight: 700; cursor: pointer; white-space: nowrap; }
+.toast .bar { position: absolute; }
+.overlay { position: fixed; inset: 0; z-index: 80; background: rgba(8,10,14,.5); display: flex; align-items: flex-end; justify-content: center; padding: 12px; }
+.dialog { width: 100%; max-width: 520px; max-height: 88vh; overflow: auto; background: var(--surface); border-radius: 18px; padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+.dialog .actions { display: flex; flex-direction: column; gap: 8px; }
+@media (min-width: 600px) { .overlay { align-items: center; } .dialog .actions { flex-direction: row-reverse; } .dialog .actions .btn { flex: 1; } }
+.sugg { display: flex; flex-wrap: wrap; gap: 8px; max-height: 220px; overflow: auto; }
+.swatches { display: flex; gap: 8px; flex-wrap: wrap; }
+.swatches button { width: 36px; height: 36px; border-radius: 50%; border: 3px solid transparent; background: var(--c); cursor: pointer; }
+.swatches button[aria-pressed="true"] { border-color: var(--ink); }
+.tpl-row { display: grid; grid-template-columns: 1fr 58px 58px 36px 36px 36px; gap: 6px; align-items: center; }
+.tpl-row input { padding: 8px; min-height: 44px; font-size: 16px; }
+.tpl-row input.c { text-align: center; }
+.tpl-row button { height: 40px; border: 0; border-radius: 10px; background: var(--surface-2); cursor: pointer; display: grid; place-items: center; color: var(--ink-2); }
+.tpl-row button svg { width: 16px; height: 16px; }
+.mode-card { border-left: 5px solid var(--accent); }
+textarea.export { font-family: ui-monospace, monospace; font-size: 12px; min-height: 160px; max-height: 40vh; overflow: auto; field-sizing: fixed; }
+@media (max-width: 380px) {
+  .set { grid-template-columns: 22px 1fr 1fr 48px 30px; gap: 6px; }
+  .tiles b { font-size: 26px; }
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <button class="brand" data-act="nav" data-view="accueil" aria-label="Accueil"><span data-ico="heartf"></span>Carnet <span>d'entraînement</span></button>
+  <button class="sync" id="sync" data-act="storageinfo">Chargement…</button>
+  <button class="icon-btn" id="themeBtn" data-act="theme" aria-label="Basculer mode sombre / clair"></button>
+</header>
+<div class="banner" id="banner"></div>
+<main id="view" aria-live="polite"></main>
+<nav class="tabs" id="tabs" aria-label="Navigation">
+  <button data-act="nav" data-view="accueil"><span data-ico="home"></span>Accueil</button>
+  <button data-act="nav" data-view="historique"><span data-ico="cal"></span>Historique</button>
+  <button data-act="nav" data-view="progres"><span data-ico="chart"></span>Progrès</button>
+  <button data-act="nav" data-view="semaine"><span data-ico="scale"></span>Semaine</button>
+  <button data-act="nav" data-view="plus"><span data-ico="more"></span>Plus</button>
+</nav>
+<div id="toasts"></div>
+<div id="modal-root"></div>
+<input type="file" id="importFile" accept=".json,application/json" hidden>
+
+<script>
+"use strict";
+/* =====================================================================
+   PARTIE 2 : LE PROGRAMME (JavaScript)
+   Plan du code :
+     0. Petits outils (dates, nombres, sécurité du texte)
+     1. Réglages par défaut (types de séance, exercices habituels)
+     2. L'état de l'appli (toutes les données en mémoire)
+     3. Le stockage (base synchronisée Claude, ou navigateur en secours)
+     4. La logique sport (dernière fois, consignes, stats)
+     5. Fenêtres, confirmations et messages "Annuler"
+     6. Les écrans (accueil, séance, historique, progrès, semaine, plus)
+     7. Les graphiques (dessinés à la main en SVG)
+     8. Les actions (ce qui se passe quand tu touches un bouton)
+     9. Le démarrage
+   ===================================================================== */
+
+/* ---------------------------------------------------------------------
+   0. PETITS OUTILS
+   --------------------------------------------------------------------- */
+const $ = (sel, root = document) => root.querySelector(sel);
+const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
+// Identifiant unique (ex. "m3x9k2abcd") pour chaque séance, exercice…
+const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+// Copie profonde d'un objet (évite de modifier l'original par accident)
+const clone = (o) => (o == null ? o : JSON.parse(JSON.stringify(o)));
+// Échappe le texte que TU tapes avant de l'afficher (empêche qu'un "<" casse la page)
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+// Normalise un nom d'exercice pour comparer "Développé couché" et "developpe couche "
+const norm = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\s+/g, " ").trim();
+const pad2 = (n) => String(n).padStart(2, "0");
+const DAY = 86400000;
+
+// Dates au format "2026-11-19" (heure locale, pas UTC)
+function dateStr(d = new Date()) { return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`; }
+function parseDate(s) { const [y, m, d] = String(s).split("-").map(Number); return new Date(y, (m || 1) - 1, d || 1); }
+const isDateStr = (s) => /^\d{4}-\d{2}-\d{2}$/.test(String(s || ""));
+const fmtDay = (s) => parseDate(s).toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" });
+const fmtShort = (s) => parseDate(s).toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
+const fmtLong = (d) => d.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
+function fmtWhen(ts) { return new Date(ts).toLocaleString("fr-FR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }); }
+function daysAgo(s) {
+  const n = Math.round((parseDate(dateStr()) - parseDate(s)) / DAY);
+  return n === 0 ? "aujourd'hui" : n === 1 ? "hier" : n < 0 ? "à venir" : `il y a ${n} j`;
+}
+// Semaine ISO (lundi → dimanche), ex. "2026-W47"
+function isoWeek(d) {
+  const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const day = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - day);
+  const y = t.getUTCFullYear(); const w = Math.ceil(((t - Date.UTC(y, 0, 1)) / DAY + 1) / 7);
+  return { y, w, id: `${y}-W${pad2(w)}` };
+}
+function mondayOf(d) { const x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x; }
+function addDays(d, n) { const x = new Date(d); x.setDate(x.getDate() + n); return x; }
+
+// Lit un nombre tapé ("42,5" ou "42.5"). Renvoie null si vide, NaN si invalide.
+function parseNum(v) {
+  if (v == null) return null;
+  const t = String(v).trim().replace(",", ".").replace(/\s/g, "");
+  if (!t) return null;
+  const n = Number(t);
+  return Number.isFinite(n) ? n : NaN;
+}
+// Lit une durée et la convertit en minutes : "45", "45:30", "1:05:00", "1h05", "45min", "45'30"
+function parseDur(v) {
+  const t = String(v ?? "").trim().toLowerCase().replace(",", ".");
+  if (!t) return null;
+  let m;
+  if ((m = t.match(/^(\d+):(\d{1,2}):(\d{1,2})$/))) return +m[1] * 60 + +m[2] + +m[3] / 60;
+  if ((m = t.match(/^(\d+):(\d{1,2})$/))) return +m[1] + +m[2] / 60;
+  if ((m = t.match(/^(\d+(?:\.\d+)?)\s*(?:min|mn|m|')?$/))) return +m[1];
+  if ((m = t.match(/^(\d+)\s*h\s*(\d{1,2})?\s*(?:min|mn|m)?$/))) return +m[1] * 60 + (+m[2] || 0);
+  if ((m = t.match(/^(\d+)\s*(?:min|mn|m|')\s*(\d{1,2})\s*(?:s|")?$/))) return +m[1] + +m[2] / 60;
+  return NaN;
+}
+const ok = (n) => n != null && Number.isFinite(n);
+const fmtNum = (n, d = 1) => (ok(n) ? n.toLocaleString("fr-FR", { maximumFractionDigits: d }) : "–");
+const toInput = (n) => (ok(n) ? String(Math.round(n * 100) / 100).replace(".", ",") : "");
+function fmtDur(min) {
+  if (!ok(min)) return "–";
+  const totalS = Math.round(min * 60); const h = Math.floor(totalS / 3600); const m = Math.floor((totalS % 3600) / 60); const s = totalS % 60;
+  if (h) return `${h} h ${pad2(m)}`;
+  return s ? `${m}:${pad2(s)}` : `${m} min`;
+}
+function fmtPace(minPerKm) {
+  if (!ok(minPerKm) || minPerKm <= 0) return "–";
+  let m = Math.floor(minPerKm); let s = Math.round((minPerKm - m) * 60); if (s === 60) { m++; s = 0; }
+  return `${m}'${pad2(s)}"`;
+}
+function withTimeout(p, ms) { return Promise.race([p, new Promise((r) => setTimeout(() => r(null), ms))]); }
+const plural = (n, one, many) => `${n} ${n > 1 ? many || one + "s" : one}`;
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// Petites icônes dessinées en SVG (pas d'images externes)
+const ICONS = {
+  home: '<path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9.5h13V10"/><path d="M10 19.5v-5h4v5"/>',
+  cal: '<rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/>',
+  chart: '<path d="M4 19.5h16"/><path d="m5 15 4.5-5 4 3.5L20 6"/>',
+  scale: '<rect x="3.5" y="3.5" width="17" height="17" rx="4"/><path d="M8.5 9.5a5 5 0 0 1 7 0l-2.4 2.6"/>',
+  more: '<circle cx="5.5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="18.5" cy="12" r="1.6"/>',
+  moon: '<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5Z"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"/>',
+  trash: '<path d="M4 7h16M9.5 7V4.5h5V7M6.5 7l1 13h9l1-13"/><path d="M10 11v5.5M14 11v5.5"/>',
+  up: '<path d="m6 14 6-6 6 6"/>',
+  down: '<path d="m6 10 6 6 6-6"/>',
+  check: '<path d="m5 12.5 4.5 4.5L19 7.5"/>',
+  x: '<path d="M6 6l12 12M18 6 6 18"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  back: '<path d="M15 5 8 12l7 7"/>',
+  target: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r=".8"/>',
+  warn: '<path d="M12 4 2.8 19.5h18.4L12 4Z"/><path d="M12 10v4.5M12 17.2v.1"/>',
+  star: '<path d="m12 3.5 2.6 5.5 6 .8-4.4 4.1 1.1 5.9L12 17l-5.3 2.8 1.1-5.9L3.4 9.8l6-.8L12 3.5Z"/>',
+  download: '<path d="M12 4v11M7 10.5l5 5 5-5M4.5 19.5h15"/>',
+  upload: '<path d="M12 15.5V4.5M7 9l5-5 5 5M4.5 19.5h15"/>',
+  restore: '<path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3L4.5 9"/><path d="M4.5 4.5V9H9"/>',
+  heart: '<path d="M12 20.3s-7.6-4.5-7.6-10.3a4.3 4.3 0 0 1 7.6-2.8 4.3 4.3 0 0 1 7.6 2.8c0 5.8-7.6 10.3-7.6 10.3Z"/>',
+};
+
+/* Petits dessins (SVG faits main, couleurs reprises du thème → marchent aussi en mode sombre) */
+const sparkle = (x, y, r, c = "var(--art-gold)") => `<path d="M${x} ${y - r}Q${x} ${y} ${x + r} ${y}Q${x} ${y} ${x} ${y + r}Q${x} ${y} ${x - r} ${y}Q${x} ${y} ${x} ${y - r}Z" fill="${c}"/>`;
+function flower(x, y, r, petal = "var(--art-pink)", heart = "var(--art-gold)") {
+  let h = "";
+  for (let i = 0; i < 5; i++) { const a = (i * 72 - 90) * Math.PI / 180; h += `<circle cx="${(x + Math.cos(a) * r).toFixed(1)}" cy="${(y + Math.sin(a) * r).toFixed(1)}" r="${(r * 0.72).toFixed(1)}" fill="${petal}"/>`; }
+  return h + `<circle cx="${x}" cy="${y}" r="${(r * 0.55).toFixed(1)}" fill="${heart}"/>`;
+}
+const bow = (x, y, k = 1) => `<g transform="translate(${x} ${y}) scale(${k})"><path d="M0 0C-9-11-19-8-17 1C-19 10-9 12 0 0Z" fill="var(--art-rose)"/><path d="M0 0C9-11 19-8 17 1C19 10 9 12 0 0Z" fill="var(--art-rose)"/><path d="M-1 1-6 14-2 13 0 16 1 2Z" fill="var(--art-rose)"/><path d="M1 1 6 14 2 13 0 16-1 2Z" fill="var(--art-rose)"/><circle r="4" fill="var(--art-pink)" stroke="var(--art-rose)" stroke-width="2"/></g>`;
+const ART = {
+  // haltère avec un nœud, fleurs et étincelles (accueil)
+  hero: () => `<svg viewBox="0 0 160 120" aria-hidden="true">
+    <ellipse cx="82" cy="98" rx="62" ry="10" fill="var(--art-pink)" opacity=".35"/>
+    <rect x="40" y="58" width="84" height="9" rx="4.5" fill="var(--art-rose)"/>
+    <rect x="26" y="40" width="16" height="45" rx="7" fill="var(--art-pink)"/><rect x="15" y="47" width="13" height="31" rx="6" fill="var(--art-blush)" stroke="var(--art-pink)" stroke-width="2"/>
+    <rect x="122" y="40" width="16" height="45" rx="7" fill="var(--art-pink)"/><rect x="136" y="47" width="13" height="31" rx="6" fill="var(--art-blush)" stroke="var(--art-pink)" stroke-width="2"/>
+    ${bow(82, 62, 1.05)}
+    ${sparkle(30, 22, 7)}${sparkle(132, 18, 9)}${sparkle(150, 100, 5)}${sparkle(60, 30, 4, "var(--art-pink)")}
+    ${flower(16, 102, 5)}${flower(106, 26, 4, "var(--art-leaf)", "var(--art-cream)")}</svg>`,
+  dumbbell: () => `<svg viewBox="0 0 64 64" aria-hidden="true"><rect x="16" y="29" width="32" height="6" rx="3" fill="var(--art-rose)"/><rect x="9" y="18" width="10" height="28" rx="5" fill="var(--art-pink)"/><rect x="45" y="18" width="10" height="28" rx="5" fill="var(--art-pink)"/>${bow(32, 31, .55)}${sparkle(54, 10, 5)}</svg>`,
+  sneaker: () => `<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M8 40C8 28 15 24 22 26L31 30C37 32 44 32 50 34C56 36 58 40 58 42V45H8Z" fill="var(--art-pink)"/><rect x="6" y="44" width="54" height="7" rx="3.5" fill="var(--art-cream)" stroke="var(--art-rose)" stroke-width="2"/><path d="M24 30l3 5M29 31l3 5M34 32l3 5" stroke="var(--art-cream)" stroke-width="2.4" stroke-linecap="round"/>${sparkle(52, 16, 6)}<path d="M4 34h8M2 40h7" stroke="var(--art-rose)" stroke-width="2" stroke-linecap="round" opacity=".6"/></svg>`,
+  glove: () => `<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M18 30C18 16 25 10 35 10C45 10 50 18 50 26V38C50 44 46 47 40 47H26C21 47 18 43 18 38Z" fill="var(--art-rose)"/><path d="M19 31C11 30 11 42 19 42" fill="var(--art-pink)"/><rect x="24" y="47" width="22" height="10" rx="3" fill="var(--art-cream)" stroke="var(--art-pink)" stroke-width="2"/><path d="M30 17c4-2 9-1 12 2" stroke="var(--art-blush)" stroke-width="3" stroke-linecap="round" fill="none"/>${sparkle(12, 14, 5)}</svg>`,
+  bottle: () => `<svg viewBox="0 0 64 64" aria-hidden="true"><rect x="27" y="5" width="11" height="8" rx="2.5" fill="var(--art-rose)"/><rect x="21" y="12" width="23" height="46" rx="10" fill="var(--art-blush)" stroke="var(--art-pink)" stroke-width="2.5"/><rect x="24" y="30" width="17" height="25" rx="7" fill="var(--art-pink)" opacity=".7"/><path d="M32.5 44.5s-5-3-5-6.6a2.8 2.8 0 0 1 5-1.8 2.8 2.8 0 0 1 5 1.8c0 3.6-5 6.6-5 6.6Z" fill="var(--art-cream)"/>${sparkle(52, 14, 6)}</svg>`,
+  scale: () => `<svg viewBox="0 0 64 64" aria-hidden="true"><rect x="10" y="16" width="44" height="40" rx="12" fill="var(--art-blush)" stroke="var(--art-pink)" stroke-width="2.5"/><path d="M22 30a10 10 0 0 1 20 0" fill="none" stroke="var(--art-rose)" stroke-width="3" stroke-linecap="round"/><path d="M32 30l4-5" stroke="var(--art-rose)" stroke-width="2.5" stroke-linecap="round"/>${flower(50, 12, 4)}</svg>`,
+  flowers: () => `<svg viewBox="0 0 90 70" aria-hidden="true"><path d="M30 64C30 50 28 42 24 34M46 64C46 48 48 40 54 30M62 64C62 54 66 48 72 44" stroke="var(--art-leaf)" stroke-width="3" fill="none" stroke-linecap="round"/><ellipse cx="38" cy="50" rx="7" ry="3.5" fill="var(--art-leaf)" transform="rotate(-30 38 50)"/>${flower(24, 28, 7)}${flower(54, 24, 8, "var(--art-rose)", "var(--art-cream)")}${flower(72, 40, 6, "var(--art-gold)", "var(--art-cream)")}${sparkle(10, 12, 5)}${sparkle(84, 14, 4, "var(--art-pink)")}</svg>`,
+};
+const kindArt = (k) => (k === "course" ? ART.sneaker() : k === "boxe" ? ART.glove() : ART.dumbbell());
+const emptyArt = (txt, art = ART.flowers) => `<div class="art-empty">${art()}<p>${esc(txt)}</p></div>`;
+function icon(name, filled) {
+  return `<svg viewBox="0 0 24 24" aria-hidden="true" fill="${filled ? "currentColor" : "none"}" stroke="currentColor" stroke-width="${filled ? 1.2 : 2}" stroke-linecap="round" stroke-linejoin="round">${ICONS[name] || ""}</svg>`;
+}
+
+/* ---------------------------------------------------------------------
+   1. RÉGLAGES PAR DÉFAUT
+   Ce sont des exercices classiques : tu peux tout modifier dans
+   Plus → Mes séances types. Couleur = numéro 1 à 8 de la palette.
+   --------------------------------------------------------------------- */
+function defaultConfig() {
+  const ex = (name, sets, reps) => ({ name, sets, reps });
+  return {
+    v: 1,
+    types: [
+      { id: "jambes", name: "Jambes", kind: "muscu", color: 2, exercises: [
+        ex("Squat", 4, 8), ex("Presse à cuisses", 3, 10), ex("Fentes marchées", 3, 10), ex("Soulevé de terre roumain", 3, 10),
+        ex("Leg curl", 3, 12), ex("Leg extension", 3, 12), ex("Hip thrust", 3, 10), ex("Mollets debout", 3, 15) ] },
+      { id: "haut", name: "Haut du corps", kind: "muscu", color: 7, exercises: [
+        ex("Développé couché", 4, 8), ex("Tirage vertical", 3, 10), ex("Rowing barre", 3, 10), ex("Développé militaire", 3, 8),
+        ex("Élévations latérales", 3, 12), ex("Curl biceps", 3, 12), ex("Extension triceps poulie", 3, 12) ] },
+      { id: "course", name: "Course", kind: "course", color: 3, exercises: [] },
+      { id: "boxe", name: "Boxe", kind: "boxe", color: 8, exercises: [] },
+    ],
+    runTypes: ["Footing", "Fractionné", "Sortie longue", "Tapis", "Côtes"],
+    boxeTypes: ["Sac de frappe", "Shadow", "Pattes d'ours", "Technique", "Sparring", "Cardio boxe"],
+    finisherTypes: ["Tapis incliné", "Vélo", "Elliptique", "Rameur", "Escalier", "Corde à sauter", "Marche"],
+    incDefault: "2",
+    lastExportAt: null,
+    updatedAt: Date.now(),
+  };
+}
+const KIND_LABEL = { muscu: "Musculation (exercices, séries)", course: "Course / cardio (distance, durée)", boxe: "Boxe / sport (durée, type)" };
+const QUICK_NOTES = ["J'ai bien travaillé", "Technique à revoir", "Trop lourd", "Trop facile", "Gêne / douleur", "Manque d'énergie"];
+
+/* ---------------------------------------------------------------------
+   2. L'ÉTAT DE L'APPLI
+   S = toutes tes données en mémoire + l'état de l'écran (S.ui).
+   Chaque écran est redessiné à partir de S.
+   --------------------------------------------------------------------- */
+const S = {
+  config: null,     // types de séance + exercices habituels
+  sessions: {},     // séances, rangées par identifiant
+  weeks: {},        // suivi hebdo (poids, alimentation, note), rangé par "2026-W47"
+  trash: {},        // corbeille
+  ui: { view: "accueil", sessionId: null, histType: "all", histDate: null, calMonth: null,
+        progTab: "muscu", progEx: null, progMetric: "max", weekOffset: 0, editTypeId: null },
+};
+const KINDS = ["sessions", "weeks", "trash"];
+const APP_VERSION = "2.0";
+// Renvoie la config (sans l'enregistrer si elle n'existe pas encore)
+function cfg() { if (!S.config) S.config = defaultConfig(); return S.config; }
+
+// Remet d'aplomb des données venues d'un fichier ou d'un vieux format (évite les plantages)
+const safeId = (id) => (/^[A-Za-z0-9_\-.~:@+]{1,100}$/.test(String(id || "")) ? String(id) : newId());
+const str = (v, max = 5000) => (v == null ? "" : String(v).slice(0, max));
+const incObj = (o, unit, amount) => ({ on: !!(o && o.on), amount: str(o && o.amount != null ? o.amount : amount, 20), unit: str((o && o.unit) || unit, 10) });
+function normExercise(e) {
+  e = e || {};
+  return {
+    id: safeId(e.id), name: str(e.name, 120) || "Exercice",
+    sets: (Array.isArray(e.sets) ? e.sets : []).slice(0, 30).map((s) => ({ kg: str(s && s.kg, 20), reps: str(s && s.reps, 20), done: !!(s && s.done), tkg: str(s && s.tkg, 20), treps: str(s && s.treps, 20) })),
+    rating: Math.max(0, Math.min(5, parseInt(e.rating) || 0)), note: str(e.note), tech: !!e.tech, inc: incObj(e.inc, "kg", "2"),
+    wmode: e.wmode === "side" ? "side" : "total", bar: str(e.bar, 20),
+  };
+}
+function normSession(s) {
+  s = s || {};
+  const kind = ["muscu", "course", "boxe"].includes(s.kind) ? s.kind : "muscu";
+  const c = s.cardio || null;
+  return {
+    id: safeId(s.id), typeId: str(s.typeId, 100), typeName: str(s.typeName, 80) || "Séance", kind,
+    date: isDateStr(s.date) ? s.date : dateStr(), createdAt: +s.createdAt || Date.now(), updatedAt: +s.updatedAt || Date.now(), endedAt: s.endedAt ? +s.endedAt : null,
+    exercises: (Array.isArray(s.exercises) ? s.exercises : []).slice(0, 60).map(normExercise),
+    cardio: kind === "muscu" ? null : {
+      sub: str(c && c.sub, 60), dist: str(c && c.dist, 20), dur: str(c && c.dur, 20), rounds: str(c && c.rounds, 20),
+      rating: Math.max(0, Math.min(5, parseInt(c && c.rating) || 0)), note: str(c && c.note),
+      inc: incObj(c && c.inc, kind === "course" ? "km" : "min", kind === "course" ? "1" : "5"),
+    },
+    note: str(s.note), rating: Math.max(0, Math.min(5, parseInt(s.rating) || 0)),
+    dur: str(s.dur, 20),
+    finisher: s.finisher ? { type: str(s.finisher.type, 60), dur: str(s.finisher.dur, 20), dist: str(s.finisher.dist, 20), note: str(s.finisher.note), tdur: str(s.finisher.tdur, 20) } : null,
+  };
+}
+function normWeek(w) {
+  w = w || {};
+  return { id: /^\d{4}-W\d{2}$/.test(w.id) ? w.id : null, monday: isDateStr(w.monday) ? w.monday : null, weight: str(w.weight, 20), food: str(w.food), note: str(w.note), createdAt: +w.createdAt || Date.now(), updatedAt: +w.updatedAt || Date.now() };
+}
+function normConfig(c) {
+  const d = defaultConfig();
+  if (!c || !Array.isArray(c.types)) return d;
+  return {
+    v: 1,
+    types: c.types.slice(0, 30).map((t) => ({
+      id: safeId(t.id), name: str(t.name, 60) || "Séance", kind: ["muscu", "course", "boxe"].includes(t.kind) ? t.kind : "muscu",
+      color: Math.max(1, Math.min(8, parseInt(t.color) || 1)),
+      exercises: (Array.isArray(t.exercises) ? t.exercises : []).slice(0, 40).map((e) => ({ name: str(e && e.name, 120), sets: str(e && e.sets, 3), reps: str(e && e.reps, 6), wmode: e && e.wmode === "side" ? "side" : "total" })),
+    })),
+    runTypes: Array.isArray(c.runTypes) ? c.runTypes.map((x) => str(x, 40)).filter(Boolean) : d.runTypes,
+    boxeTypes: Array.isArray(c.boxeTypes) ? c.boxeTypes.map((x) => str(x, 40)).filter(Boolean) : d.boxeTypes,
+    finisherTypes: Array.isArray(c.finisherTypes) ? c.finisherTypes.map((x) => str(x, 40)).filter(Boolean) : d.finisherTypes,
+    incDefault: str(c.incDefault || "2", 10), lastExportAt: c.lastExportAt || null, updatedAt: +c.updatedAt || Date.now(),
+  };
+}
+function normTrash(t) {
+  t = t || {};
+  return { id: safeId(t.id), kind: str(t.kind, 20), at: +t.at || Date.now(), updatedAt: +t.updatedAt || +t.at || Date.now(), label: str(t.label, 200), sessionId: str(t.sessionId, 100), index: parseInt(t.index) || 0, payload: t.payload || null };
+}
+const NORMALIZERS = { sessions: normSession, weeks: normWeek, trash: normTrash };
+
+/* ---------------------------------------------------------------------
+   3. LE STOCKAGE
+   Trois modes :
+   - "cloud"   : la page est ouverte comme artefact Claude → base de
+                 données privée liée à ton compte, synchronisée entre
+                 téléphone et ordi.
+   - "offline" : artefact Claude mais base injoignable (pas de réseau…)
+                 → on travaille sur la copie de l'appareil, et les
+                 changements partent dès que la base répond.
+   - "local"   : fichier HTML ouvert seul → tout reste dans ce navigateur.
+   Dans tous les cas, une copie complète est gardée dans le navigateur
+   ("miroir") pour démarrer vite et fonctionner sans réseau.
+   --------------------------------------------------------------------- */
+const LS = {
+  get(k, def) { try { const v = localStorage.getItem(k); return v == null ? def : JSON.parse(v); } catch (e) { return def; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } },
+  del(k) { try { localStorage.removeItem(k); } catch (e) {} },
+};
+const Store = {
+  mode: "loading", db: null, base: null, dl: null, ready: false,
+  pending: new Map(),   // écritures à envoyer : clé → {kind, id, ts}
+  inflight: new Set(),  // écritures en cours d'envoi
+  outbox: {},           // copie durable des écritures non confirmées (survit à la fermeture de la page)
+  timer: null, backoff: 0, defin: { config: false, sessions: false, weeks: false, trash: false },
+  slow: false, offlineMsg: "",
+  provider: null,       // "claude" (artefact), "firebase" (ta propre base) ou null (local)
+  unsubs: [], gen: 0, fbAuth: null, fbUser: null,
+};
+const keyOf = (kind, id) => (kind === "config" ? "config" : `${kind}/${id}`);
+const getLocal = (kind, id) => (kind === "config" ? S.config : S[kind][id] ?? null);
+
+// --- Miroir local (copie de secours dans le navigateur) ---
+let mirrorTimer = null;
+function saveMirrorSoon(ms) {
+  clearTimeout(mirrorTimer);
+  mirrorTimer = setTimeout(saveMirrorNow, ms ?? (Store.mode === "local" ? 250 : 1200));
+}
+function saveMirrorNow() {
+  clearTimeout(mirrorTimer); mirrorTimer = null;
+  const okSave = LS.set("carnet.mirror", { config: S.config, sessions: S.sessions, weeks: S.weeks, trash: S.trash, savedAt: Date.now() });
+  if (!okSave && Store.mode === "local") toast("Le navigateur refuse d'enregistrer (mémoire pleine ?). Exporte tes données tout de suite.", { error: true, duration: 9000 });
+}
+function loadMirror() {
+  const m = LS.get("carnet.mirror", null);
+  if (!m) return;
+  if (m.config) S.config = normConfig(m.config);
+  for (const kind of KINDS) {
+    S[kind] = {};
+    for (const [id, v] of Object.entries(m[kind] || {})) { const n = NORMALIZERS[kind](v); if (kind === "weeks") { n.id = id; } else n.id = id; S[kind][id] = n; }
+  }
+}
+// --- File d'attente durable ---
+let outboxTimer = null;
+function saveOutboxSoon() { clearTimeout(outboxTimer); outboxTimer = setTimeout(saveOutboxNow, 300); }
+function saveOutboxNow() {
+  clearTimeout(outboxTimer); outboxTimer = null;
+  const o = {};
+  for (const [k, e] of Object.entries(Store.outbox)) o[k] = { ...e, data: clone(getLocal(e.kind, e.id)) };
+  LS.set("carnet.outbox", o);
+}
+
+/* persist() = "cette donnée a changé, enregistre-la".
+   delay : on attend un peu pour regrouper les frappes (pas une écriture par lettre). */
+function persist(kind, id, delay = 700) {
+  saveMirrorSoon();
+  if (Store.mode === "local") { updateSyncChip(); return; }
+  const key = keyOf(kind, id); const ts = Date.now();
+  Store.pending.set(key, { kind, id, ts });
+  Store.outbox[key] = { kind, id, ts };
+  saveOutboxSoon();
+  if (Store.mode === "cloud" && Store.ready) scheduleFlush(delay);
+  updateSyncChip();
+}
+function scheduleFlush(ms) { clearTimeout(Store.timer); Store.timer = setTimeout(flush, ms); }
+
+// Envoie les écritures en attente à la base (3 en parallèle max, une seule à la fois par document)
+function flush() {
+  Store.timer = null;
+  if (Store.mode !== "cloud") return;
+  for (const [key, p] of [...Store.pending]) {
+    if (Store.inflight.has(key)) continue;
+    if (Store.inflight.size >= 3) break;
+    Store.pending.delete(key); Store.inflight.add(key);
+    writeOne(p).then(() => {
+      Store.inflight.delete(key); Store.backoff = 0;
+      const ob = Store.outbox[key];
+      if (!Store.pending.has(key) && ob && ob.ts <= p.ts) { delete Store.outbox[key]; saveOutboxSoon(); }
+      updateSyncChip();
+      if (Store.pending.size) scheduleFlush(0);
+    }, (err) => {
+      Store.inflight.delete(key);
+      const code = (err && err.code) || "unavailable";
+      if (code === "invalid_argument" || code === "quota_exceeded" || code === "transform_error") {
+        delete Store.outbox[key]; saveOutboxSoon();
+        toast(code === "quota_exceeded" ? "Stockage plein : exporte tes données puis vide la corbeille." : "Une donnée n'a pas pu être enregistrée en ligne (elle reste sur cet appareil).", { error: true, duration: 8000 });
+        console.warn("Écriture refusée", key, err);
+      } else if (["revoked", "not_granted", "capability_disabled", "capability_removed"].includes(code)) {
+        if (!Store.pending.has(key)) Store.pending.set(key, p);
+        goOffline("La synchronisation a été coupée. Tes saisies restent sur cet appareil.");
+      } else {
+        if (!Store.pending.has(key)) Store.pending.set(key, p);
+        Store.backoff = Math.min(60000, (Store.backoff || 1000) * 2);
+        scheduleFlush(Store.backoff + Math.random() * 500);
+      }
+      updateSyncChip();
+    });
+  }
+}
+function refFor(kind, id) { return kind === "config" ? Store.base : Store.base.collection(kind).doc(id); }
+async function writeOne(p) {
+  const data = getLocal(p.kind, p.id);
+  const ref = refFor(p.kind, p.id);
+  if (data == null) return ref.delete();
+  return ref.set(clone(data));
+}
+// Réessaie une opération si la base est momentanément occupée
+async function retry(fn, tries = 4) {
+  let wait = 600;
+  for (let i = 0; ; i++) {
+    try { return await fn(); }
+    catch (e) {
+      const code = e && e.code;
+      if (i >= tries || !["unavailable", "resource_exhausted"].includes(code || "unavailable")) throw e;
+      await sleep(wait + Math.random() * 300); wait *= 2;
+    }
+  }
+}
+
+// Démarrage de la base synchronisée
+async function initCloud() {
+  const c = window.claude;
+  const [db, user, dl] = await Promise.all([
+    withTimeout(c.use("db").catch(() => null), 12000),
+    withTimeout(c.use("user").catch(() => null), 12000),
+    withTimeout(c.use("downloads").catch(() => null), 12000),
+  ]);
+  Store.dl = dl || null;
+  if (!db) return goOffline("Base de données injoignable (connecte-toi à Claude ou vérifie le réseau). Tu travailles sur la copie de cet appareil.");
+  let uid = null;
+  try { uid = user ? await user.id() : null; } catch (e) { uid = null; }
+  if (!uid) return goOffline("Impossible d'identifier ton compte. Tu travailles sur la copie de cet appareil.");
+  // Tes données vont dans data/users/<ton id>/… : un espace privé que personne d'autre ne peut lire,
+  // même si tu partages le lien de la page.
+  startCloud(db, `data/users/${uid}/app`, "claude");
+}
+/* startCloud : branche l'appli sur une base (Claude ou Firebase, même façon de parler)
+   et s'abonne aux changements : si tu modifies sur l'ordi, le téléphone se met à jour tout seul. */
+function startCloud(db, basePath, provider) {
+  stopCloud();
+  Store.db = db; Store.provider = provider; Store.base = db.doc(basePath);
+  Store.mode = "cloud"; Store.ready = false; Store.slow = false; Store.offlineMsg = "";
+  Store.defin = { config: false, sessions: false, weeks: false, trash: false };
+  Store.unsubs = [Store.base.onSnapshot(onConfigSnap, onSubError)];
+  for (const kind of KINDS) Store.unsubs.push(Store.base.collection(kind).onSnapshot((snap) => onCollSnap(kind, snap), onSubError));
+  renderBanner(); updateSyncChip();
+  // Si la base met plus de 10 s à répondre, on prévient et on continue quand même
+  const gen = ++Store.gen;
+  setTimeout(() => {
+    if (gen === Store.gen && !Store.ready && Store.mode === "cloud") { Store.slow = true; renderBanner(); markReady(); }
+  }, 10000);
+}
+function stopCloud() {
+  for (const u of Store.unsubs) { try { u(); } catch (e) {} }
+  Store.unsubs = []; Store.gen++; clearTimeout(Store.timer);
+}
+
+/* --- FIREBASE : ta propre base, sans passer par Claude ---
+   Firestore (la base de Firebase) se manipule presque exactement comme celle de Claude :
+   doc(), collection(), set(), delete(), onSnapshot(). fbWrap() fait la traduction. */
+const FB_VER = "10.12.2";
+function loadScript(src) {
+  return new Promise((res, rej) => { const el = document.createElement("script"); el.src = src; el.onload = res; el.onerror = () => rej(new Error("Chargement impossible : " + src)); document.head.appendChild(el); });
+}
+async function loadFirebase() {
+  if (window.firebase && window.firebase.firestore && window.firebase.auth) return;
+  const base = `https://www.gstatic.com/firebasejs/${FB_VER}/`;
+  await loadScript(base + "firebase-app-compat.js");
+  await Promise.all([loadScript(base + "firebase-auth-compat.js"), loadScript(base + "firebase-firestore-compat.js")]);
+}
+function fbWrap(fs) {
+  const mapErr = (e) => {
+    const c = String((e && e.code) || "unavailable").replace(/-/g, "_");
+    return { code: c === "permission_denied" || c === "unauthenticated" ? "revoked" : c === "deadline_exceeded" ? "unavailable" : c, message: e && e.message };
+  };
+  const rethrow = (e) => { throw mapErr(e); };
+  const opts = { includeMetadataChanges: true };
+  const wrapQ = (q) => ({
+    orderBy: (f, d) => wrapQ(q.orderBy(f, d)), limit: (n) => wrapQ(q.limit(n)),
+    get: () => q.get().catch(rethrow),
+    onSnapshot: (next, err) => q.onSnapshot(opts, next, (e) => err && err(mapErr(e))),
+  });
+  const wrapD = (d) => ({
+    id: d.id, path: d.path,
+    get: () => d.get().catch(rethrow), set: (x) => d.set(x).catch(rethrow), delete: () => d.delete().catch(rethrow),
+    onSnapshot: (next, err) => d.onSnapshot(opts, next, (e) => err && err(mapErr(e))),
+    collection: (p) => wrapC(d.collection(p)),
+  });
+  const wrapC = (c) => Object.assign(wrapQ(c), { path: c.path, doc: (id) => wrapD(c.doc(id)) });
+  return { doc: (p) => wrapD(fs.doc(p)), collection: (p) => wrapC(fs.collection(p)) };
+}
+async function initFirebase(conf) {
+  Store.provider = "firebase"; Store.mode = "loading"; updateSyncChip();
+  try { await Promise.race([loadFirebase(), sleep(15000).then(() => { throw new Error("timeout"); })]); }
+  catch (e) { console.warn(e); return goOffline("Firebase n'a pas pu se charger (pas de réseau ?). Tu travailles sur la copie de cet appareil ; tout partira à la prochaine ouverture avec du réseau."); }
+  try { if (!firebase.apps.length) firebase.initializeApp(conf); Store.fbAuth = firebase.auth(); }
+  catch (e) { console.error(e); return goOffline("La configuration Firebase est invalide : vérifie-la dans Plus → Synchronisation."); }
+  Store.fbAuth.onAuthStateChanged((user) => {
+    Store.fbUser = user || null;
+    if (user) {
+      // Première connexion de cet appareil à ce compte : on envoie aussi ce qui était déjà noté ici (fusion)
+      const flag = "carnet.fbSeeded." + user.uid;
+      if (!LS.get(flag, false)) { seedOutboxFromLocal(); LS.set(flag, true); }
+      startCloud(fbWrap(firebase.firestore()), `users/${user.uid}`, "firebase");
+    } else {
+      stopCloud();
+      goOffline("Connecte-toi (Plus → Synchronisation) pour retrouver tes données sur tous tes appareils. En attendant, tout est gardé sur cet appareil.", true);
+    }
+    render();
+  });
+}
+// Met toutes les données de l'appareil dans la file d'envoi (la version la plus récente gagnera)
+function seedOutboxFromLocal() {
+  const now = Date.now();
+  if (S.config) Store.outbox.config = { kind: "config", id: null, ts: S.config.updatedAt || now, seed: true };
+  for (const kind of KINDS) for (const [id, v] of Object.entries(S[kind])) Store.outbox[`${kind}/${id}`] = { kind, id, ts: v.updatedAt || now };
+  saveOutboxNow();
+}
+// Lit la config collée depuis la console Firebase (accepte le bout de code JavaScript tel quel)
+function parseFirebaseConfig(text) {
+  let t = String(text || "").trim(); const a = t.indexOf("{"), b = t.lastIndexOf("}");
+  if (a < 0 || b < a) return null;
+  t = t.slice(a, b + 1);
+  let o = null;
+  try { o = JSON.parse(t); } catch (e) {
+    const j = t.replace(/(^|\s)\/\/.*$/gm, "$1").replace(/([{,]\s*)([A-Za-z_$][\w$]*)\s*:/g, '$1"$2":').replace(/'([^']*)'/g, '"$1"').replace(/,\s*}/g, "}");
+    try { o = JSON.parse(j); } catch (e2) { return null; }
+  }
+  return o && o.apiKey && o.projectId && o.appId ? { authDomain: o.projectId + ".firebaseapp.com", ...o } : null;
+}
+const AUTH_ERR = {
+  "auth/invalid-email": "Adresse e-mail invalide.", "auth/missing-password": "Entre ton mot de passe.", "auth/missing-email": "Entre ton adresse e-mail.",
+  "auth/weak-password": "Mot de passe trop court (6 caractères minimum).",
+  "auth/email-already-in-use": "Un compte existe déjà avec cet e-mail : utilise « Se connecter ».",
+  "auth/invalid-credential": "E-mail ou mot de passe incorrect.", "auth/wrong-password": "E-mail ou mot de passe incorrect.", "auth/user-not-found": "Aucun compte avec cet e-mail.",
+  "auth/too-many-requests": "Trop d'essais : réessaie dans quelques minutes.", "auth/network-request-failed": "Pas de réseau pour l'instant.",
+  "auth/operation-not-allowed": "La connexion par e-mail n'est pas activée dans Firebase (Authentication → Sign-in method → E-mail/Mot de passe).",
+  "auth/admin-restricted-operation": "La création de compte est désactivée dans ton projet Firebase.",
+};
+const authMsg = (e) => AUTH_ERR[e && e.code] || "Connexion impossible : " + ((e && e.message) || "erreur inconnue");
+function onSubError(err) {
+  console.warn("Abonnement interrompu", err);
+  if (err && err.code === "unavailable") {
+    goOffline("Connexion à la base perdue. Recharge la page quand tu as du réseau ; tes saisies restent sur cet appareil.");
+  } else goOffline("La synchronisation n'est plus disponible. Tes saisies restent sur cet appareil.");
+}
+function goOffline(msg, needLogin) {
+  if (Store.mode === "local") return;
+  Store.mode = "offline"; Store.offlineMsg = msg; Store.ready = true; Store.needLogin = !!needLogin;
+  renderBanner(); updateSyncChip(); renderSoon();
+}
+// Réception de la config depuis la base
+function onConfigSnap(snap) {
+  const definitive = !snap.metadata.fromCache;
+  if (snap.exists) {
+    const data = snap.data();
+    const ob = Store.outbox.config;
+    if (!ob || ob.seed || (data.updatedAt || 0) > ob.ts) {
+      if (ob) { delete Store.outbox.config; Store.pending.delete("config"); }
+      const before = JSON.stringify(S.config); S.config = normConfig(clone(data));
+      if (JSON.stringify(S.config) !== before) renderSoon();
+    }
+  } else if (definitive && !Store.outbox.config) {
+    // Toute première ouverture : on crée la config de départ (ou celle déjà présente sur l'appareil)
+    cfg(); persist("config", null, 0);
+  }
+  if (definitive) { Store.defin.config = true; checkReady(); }
+}
+// Réception d'une collection (séances, semaines, corbeille) depuis la base
+function onCollSnap(kind, snap) {
+  const definitive = !snap.metadata.fromCache;
+  const local = S[kind];
+  const next = definitive ? {} : { ...local };
+  for (const d of snap.docs) {
+    const data = d.data(); const key = `${kind}/${d.id}`; const ob = Store.outbox[key];
+    if (ob) {
+      // Tu as une modif locale pas encore envoyée : on garde la tienne, sauf si l'autre appareil a modifié après toi
+      if ((data.updatedAt || 0) > ob.ts && !Store.inflight.has(key)) { delete Store.outbox[key]; Store.pending.delete(key); }
+      else continue;
+    }
+    const n = NORMALIZERS[kind](clone(data)); n.id = d.id; next[d.id] = n;
+  }
+  for (const ob of Object.values(Store.outbox)) {
+    if (ob.kind !== kind) continue;
+    const v = local[ob.id];
+    if (v != null) next[ob.id] = v; else delete next[ob.id];
+  }
+  let changed = false;
+  const ids = new Set([...Object.keys(local), ...Object.keys(next)]);
+  for (const id of ids) if (JSON.stringify(local[id]) !== JSON.stringify(next[id])) { changed = true; break; }
+  S[kind] = next;
+  if (changed) { sortedCache = null; saveMirrorSoon(); renderSoon(); }
+  if (definitive) { Store.defin[kind] = true; checkReady(); }
+}
+function checkReady() { if (!Store.ready && Object.values(Store.defin).every(Boolean)) markReady(); }
+function markReady() {
+  if (Store.ready) return;
+  Store.ready = true;
+  // On envoie tout ce qui a été saisi hors-ligne
+  for (const [key, ob] of Object.entries(Store.outbox)) if (!Store.pending.has(key)) Store.pending.set(key, { kind: ob.kind, id: ob.id, ts: ob.ts });
+  if (Store.pending.size) scheduleFlush(100);
+  updateSyncChip(); renderBanner(); renderSoon();
+  dailyBackup();
+}
+
+/* --- Sauvegardes complètes (pour "revenir en arrière") ---
+   En mode synchronisé : stockées dans la base, découpées en morceaux.
+   En mode local : dans le navigateur (5 dernières). */
+function snapshotData() {
+  return { app: "carnet-entrainement", version: 1, exportedAt: new Date().toISOString(),
+    config: S.config, sessions: Object.values(S.sessions), weeks: Object.values(S.weeks), trash: Object.values(S.trash) };
+}
+async function createBackup(reason) {
+  const json = JSON.stringify(snapshotData());
+  const meta = { id: newId(), at: Date.now(), reason: str(reason, 80), size: json.length,
+    sessions: Object.keys(S.sessions).length, weeks: Object.keys(S.weeks).length };
+  try {
+    if (Store.mode === "cloud") {
+      const CH = 60000; meta.parts = Math.ceil(json.length / CH) || 1;
+      const ref = Store.base.collection("backups").doc(meta.id);
+      for (let i = 0; i < meta.parts; i++) await retry(() => ref.collection("parts").doc(String(i)).set({ i, s: json.slice(i * CH, (i + 1) * CH) }));
+      await retry(() => ref.set(meta)); // la fiche est écrite en dernier : une sauvegarde incomplète reste invisible
+      pruneBackups();
+    } else {
+      const list = LS.get("carnet.backups", []);
+      list.unshift({ ...meta, data: json });
+      while (list.length > 5) list.pop();
+      while (!LS.set("carnet.backups", list) && list.length > 1) list.pop();
+    }
+    return meta;
+  } catch (e) { console.warn("Sauvegarde impossible", e); return null; }
+}
+async function listBackups() {
+  if (Store.mode === "cloud") {
+    const snap = await retry(() => Store.base.collection("backups").orderBy("at", "desc").limit(30).get());
+    return snap.docs.map((d) => d.data());
+  }
+  return LS.get("carnet.backups", []).map(({ data, ...m }) => m);
+}
+async function readBackup(id) {
+  if (Store.mode === "cloud") {
+    const ref = Store.base.collection("backups").doc(id);
+    const meta = (await retry(() => ref.get())).data();
+    if (!meta) throw new Error("Sauvegarde introuvable");
+    let json = "";
+    for (let i = 0; i < meta.parts; i++) { const p = await retry(() => ref.collection("parts").doc(String(i)).get()); json += (p.data() || {}).s || ""; }
+    return JSON.parse(json);
+  }
+  const b = LS.get("carnet.backups", []).find((x) => x.id === id);
+  if (!b) throw new Error("Sauvegarde introuvable");
+  return JSON.parse(b.data);
+}
+async function pruneBackups() {
+  try {
+    const all = await listBackups();
+    for (const m of all.slice(12)) {
+      const ref = Store.base.collection("backups").doc(m.id);
+      await retry(() => ref.delete());
+      for (let i = 0; i < (m.parts || 1); i++) await retry(() => ref.collection("parts").doc(String(i)).delete());
+    }
+  } catch (e) { console.warn(e); }
+}
+// Une sauvegarde automatique par jour, au premier lancement
+async function dailyBackup() {
+  if (!Object.keys(S.sessions).length) return;
+  try {
+    const list = await listBackups();
+    const today = dateStr();
+    if (list.some((b) => dateStr(new Date(b.at)) === today)) return;
+    await createBackup("Automatique (1 par jour)");
+  } catch (e) { console.warn(e); }
+}
+
+/* ---------------------------------------------------------------------
+   4. LA LOGIQUE SPORT
+   --------------------------------------------------------------------- */
+let sortedCache = null;
+// Toutes les séances, de la plus récente à la plus ancienne
+function sortedSessions() {
+  if (!sortedCache) sortedCache = Object.values(S.sessions).sort((a, b) => b.date.localeCompare(a.date) || (b.createdAt || 0) - (a.createdAt || 0));
+  return sortedCache;
+}
+const typeOf = (s) => cfg().types.find((t) => t.id === s.typeId);
+const colorVar = (n) => `var(--c${Math.max(1, Math.min(8, n || 1))})`;
+function sessionColor(s) { const t = typeOf(s); if (t) return colorVar(t.color); let h = 0; for (const ch of s.typeName || "") h = (h * 31 + ch.charCodeAt(0)) % 8; return colorVar(h + 1); }
+const sessionName = (s) => (typeOf(s) || {}).name || s.typeName;
+
+// Une série compte si elle est validée ou si un poids / des répétitions sont notés
+function filledSets(ex) {
+  return (ex.sets || []).filter((st) => st.done || String(st.kg).trim() || String(st.reps).trim())
+    .map((st) => ({ kg: parseNum(st.kg !== "" ? st.kg : st.done ? st.tkg : ""), reps: parseNum(st.reps !== "" ? st.reps : st.done ? st.treps : "") }))
+    .filter((x) => !Number.isNaN(x.kg) && !Number.isNaN(x.reps));
+}
+const exHasData = (ex) => filledSets(ex).length > 0 || !!String(ex.note || "").trim() || ex.rating > 0;
+/* Poids "total" ou "par côté" :
+   - total    : tu notes le poids complet (haltère, machine…)
+   - par côté : tu notes ce que tu mets de CHAQUE côté de la barre ; le total
+                réel = 2 × côté + poids de la barre (si tu l'as noté).
+   Les graphiques et records utilisent toujours le total réel, pour que tout reste comparable. */
+const isSide = (ex) => ex && ex.wmode === "side";
+const unitLbl = (ex) => (isSide(ex) ? "kg/côté" : "kg");
+function effKg(ex, kg) {
+  if (!ok(kg)) return kg;
+  if (!isSide(ex)) return kg;
+  const bar = parseNum(ex.bar); return kg * 2 + (ok(bar) ? bar : 0);
+}
+function exStats(ex) {
+  const fs = filledSets(ex);
+  let max = null, rawMax = null, e1rm = null, volume = 0, best = null, reps = 0;
+  for (const x of fs) {
+    const k = effKg(ex, x.kg);
+    if (ok(k) && (max == null || k > max)) { max = k; rawMax = x.kg; best = x; }
+    if (ok(k) && ok(x.reps) && x.reps > 0) { const r = k * (1 + x.reps / 30); if (e1rm == null || r > e1rm) e1rm = r; volume += k * x.reps; }
+    if (ok(x.reps)) reps += x.reps;
+  }
+  return { max, rawMax, e1rm, volume, best, reps, sets: fs.length };
+}
+// "3 × 10 à 40 kg", "3 × 10 à 20 kg/côté (+ barre 20)" ou "10×40 · 8×42,5 kg"
+function setsSummary(ex) {
+  const fs = filledSets(ex);
+  if (!fs.length) return "aucune série notée";
+  const r = (x) => (ok(x.reps) ? x.reps : "?");
+  const bar = parseNum(ex.bar);
+  const tail = isSide(ex) && ok(bar) ? ` (+ barre ${fmtNum(bar, 1)})` : "";
+  if (fs.every((x) => x.kg === fs[0].kg && x.reps === fs[0].reps)) {
+    return `${fs.length} × ${r(fs[0])}` + (ok(fs[0].kg) ? ` à ${fmtNum(fs[0].kg, 2)} ${unitLbl(ex)}${tail}` : " (poids du corps)");
+  }
+  const anyKg = fs.some((x) => ok(x.kg));
+  return fs.map((x) => (anyKg ? `${r(x)}×${ok(x.kg) ? fmtNum(x.kg, 2) : "PdC"}` : r(x))).join(" · ") + (anyKg ? ` ${unitLbl(ex)}${tail}` : " reps");
+}
+// Retrouve la dernière fois que tu as fait cet exercice AVANT la séance en cours
+function lastTime(name, cur) {
+  const n = norm(name);
+  for (const s of sortedSessions()) {
+    if (s.id === cur.id) continue;
+    if (s.date > cur.date || (s.date === cur.date && (s.createdAt || 0) >= (cur.createdAt || 0))) continue;
+    const ex = (s.exercises || []).find((e) => norm(e.name) === n && exHasData(e));
+    if (ex) return { s, ex };
+  }
+  return null;
+}
+function lastCardio(cur) {
+  for (const s of sortedSessions()) {
+    if (s.id === cur.id || s.kind !== cur.kind || !s.cardio) continue;
+    if (s.date > cur.date || (s.date === cur.date && (s.createdAt || 0) >= (cur.createdAt || 0))) continue;
+    if (s.cardio.dist || s.cardio.dur || s.cardio.note) return s;
+  }
+  return null;
+}
+// Texte de la consigne "augmenter la prochaine fois"
+function consigneText(ex) {
+  if (!ex.inc || !ex.inc.on) return "";
+  const a = parseNum(ex.inc.amount);
+  if (!ok(a)) return "augmenter la prochaine fois";
+  const st = exStats(ex);
+  const u = ex.inc.unit === "kg" ? unitLbl(ex) : ex.inc.unit;
+  let t = `+${fmtNum(a, 2)} ${u}`;
+  if (ex.inc.unit === "kg" && ok(st.rawMax)) t += ` → vise ${fmtNum(st.rawMax + a, 2)} ${u}`;
+  if (ex.inc.unit === "reps" && st.best && ok(st.best.reps)) t += ` → vise ${st.best.reps + a} reps`;
+  return t;
+}
+// Crée un exercice pré-rempli : les objectifs (gris) viennent de la dernière fois + consigne éventuelle
+function buildExercise(name, tpl, session) {
+  const last = lastTime(name, session);
+  let sets;
+  if (last && filledSets(last.ex).length) {
+    const inc = last.ex.inc && last.ex.inc.on ? parseNum(last.ex.inc.amount) : null;
+    const unit = last.ex.inc && last.ex.inc.unit;
+    sets = filledSets(last.ex).map((x) => ({ kg: "", reps: "", done: false,
+      tkg: ok(x.kg) ? toInput(x.kg + (ok(inc) && unit === "kg" ? inc : 0)) : "",
+      treps: ok(x.reps) ? String(x.reps + (ok(inc) && unit === "reps" ? inc : 0)) : "" }));
+  } else {
+    const n = Math.max(1, Math.min(10, parseInt(tpl && tpl.sets) || 3));
+    sets = Array.from({ length: n }, () => ({ kg: "", reps: "", done: false, tkg: "", treps: tpl && tpl.reps ? String(tpl.reps) : "" }));
+  }
+  const prev = last ? last.ex : lastAnyTime(name, session);
+  return { id: newId(), name, sets, rating: 0, note: "", tech: false, inc: { on: false, amount: cfg().incDefault || "2", unit: "kg" },
+    wmode: prev && prev.wmode === "side" ? "side" : (tpl && tpl.wmode === "side" ? "side" : "total"), bar: prev && prev.bar ? prev.bar : "" };
+}
+// Même nom d'exercice, n'importe quand (pour retrouver le mode de poids choisi)
+function lastAnyTime(name, cur) {
+  const n = norm(name);
+  for (const s of sortedSessions()) { if (s.id === cur.id) continue; const ex = s.exercises.find((e) => norm(e.name) === n); if (ex) return ex; }
+  return null;
+}
+function createSession(typeId, date) {
+  const t = cfg().types.find((x) => x.id === typeId);
+  if (!t) return null;
+  const s = { id: newId(), typeId: t.id, typeName: t.name, kind: t.kind, date: date || dateStr(), createdAt: Date.now(), updatedAt: Date.now(), endedAt: null,
+    exercises: [], cardio: null, note: "", rating: 0, dur: "", finisher: null };
+  // Cardio de fin : si tu en as fait un la dernière fois sur ce type de séance, on le propose déjà
+  const prevF = sortedSessions().find((x) => x.typeId === t.id && x.finisher);
+  if (prevF) s.finisher = { type: prevF.finisher.type, dur: "", dist: "", note: "", tdur: prevF.finisher.dur || "" };
+  if (t.kind === "course") s.cardio = { sub: cfg().runTypes[0] || "", dist: "", dur: "", rounds: "", rating: 0, note: "", inc: { on: false, amount: "1", unit: "km" } };
+  if (t.kind === "boxe") s.cardio = { sub: cfg().boxeTypes[0] || "", dist: "", dur: "", rounds: "", rating: 0, note: "", inc: { on: false, amount: "5", unit: "min" } };
+  for (const e of t.exercises) if (e.name && e.name.trim()) s.exercises.push(buildExercise(e.name.trim(), e, s));
+  return s;
+}
+function saveSession(s, delay) { s.updatedAt = Date.now(); S.sessions[s.id] = s; sortedCache = null; persist("sessions", s.id, delay); }
+function cardioStats(s) {
+  const c = s.cardio || {}; const dist = parseNum(c.dist); const dur = parseDur(c.dur);
+  const pace = ok(dist) && ok(dur) && dist > 0 ? dur / dist : null;
+  return { dist, dur, pace, speed: ok(pace) ? 60 / pace : null };
+}
+// Durées : séance (muscu) ou activité principale (course/boxe) + cardio de fin = total
+function sessionDurations(s) {
+  const main = s.kind === "muscu" ? parseDur(s.dur) : parseDur(s.cardio && s.cardio.dur);
+  const fin = s.finisher ? parseDur(s.finisher.dur) : null;
+  const m = ok(main) ? main : null, f = ok(fin) ? fin : null;
+  return { main: m, fin: f, total: m == null && f == null ? null : (m || 0) + (f || 0) };
+}
+function sessionSummary(s) {
+  const base = sessionSummaryBase(s); const d = sessionDurations(s);
+  const extra = [];
+  if (s.finisher && (s.finisher.dur || s.finisher.type)) extra.push(`+ ${s.finisher.type || "cardio"}${ok(d.fin) ? " " + fmtDur(d.fin) : ""}`);
+  if (ok(d.total) && (s.kind === "muscu" || ok(d.fin))) extra.push(`total ${fmtDur(d.total)}`);
+  return [base, ...extra].join(" · ");
+}
+function sessionSummaryBase(s) {
+  if (s.kind === "course") { const c = cardioStats(s); const parts = []; if (ok(c.dist)) parts.push(`${fmtNum(c.dist, 2)} km`); if (ok(c.dur)) parts.push(fmtDur(c.dur)); if (ok(c.pace)) parts.push(fmtPace(c.pace) + "/km"); return parts.join(" · ") || (s.cardio && s.cardio.sub) || "à compléter"; }
+  if (s.kind === "boxe") { const c = cardioStats(s); return [ok(c.dur) ? fmtDur(c.dur) : "", s.cardio && s.cardio.sub].filter(Boolean).join(" · ") || "à compléter"; }
+  const exs = s.exercises.filter(exHasData); const vol = exs.reduce((a, e) => a + exStats(e).volume, 0);
+  return `${exs.length}/${s.exercises.length} exercices` + (vol ? ` · ${fmtNum(vol, 0)} kg soulevés` : "");
+}
+// Pour chaque exercice : sa dernière occurrence (pour "à retravailler" et "consignes")
+function latestByExercise() {
+  const seen = new Map();
+  for (const s of sortedSessions()) for (const e of s.exercises) { const k = norm(e.name); if (!seen.has(k) && exHasData(e)) seen.set(k, { s, ex: e }); }
+  return [...seen.values()];
+}
+function sessionsInRange(from, to) { return sortedSessions().filter((s) => s.date >= from && s.date <= to); }
+
+/* ---------------------------------------------------------------------
+   5. FENÊTRES, CONFIRMATIONS, MESSAGES "ANNULER"
+   (les alert()/confirm() du navigateur sont bloqués dans un artefact,
+   donc on dessine nos propres fenêtres)
+   --------------------------------------------------------------------- */
+let toastTimer = null;
+function toast(msg, opts = {}) {
+  const root = $("#toasts");
+  clearTimeout(toastTimer);
+  root.innerHTML = `<div class="toast ${opts.error ? "err" : ""}" role="status"><span></span>${opts.action ? `<button type="button">${esc(opts.action)}</button>` : ""}</div>`;
+  root.querySelector("span").textContent = msg;
+  if (opts.action) root.querySelector("button").onclick = () => { root.innerHTML = ""; clearTimeout(toastTimer); opts.onAction && opts.onAction(); };
+  toastTimer = setTimeout(() => { root.innerHTML = ""; }, opts.duration || (opts.action ? 7000 : 3200));
+}
+// Message "Supprimé — Annuler" (7 secondes)
+function undoToast(msg, undo) { toast(msg, { action: "Annuler", onAction: undo, duration: 7000 }); }
+
+let modalClose = null;
+function openModal({ title, body = "", actions = [], onOpen }) {
+  closeModal();
+  const root = $("#modal-root");
+  root.innerHTML = `<div class="overlay" role="dialog" aria-modal="true" aria-label="${esc(title)}"><div class="dialog"><h2>${esc(title)}</h2><div class="stack">${body}</div><div class="actions"></div></div></div>`;
+  const acts = root.querySelector(".actions");
+  actions.forEach((a) => {
+    const b = document.createElement("button"); b.type = "button"; b.className = "btn " + (a.kind || ""); b.textContent = a.label;
+    b.onclick = () => { const r = a.onClick ? a.onClick() : undefined; if (r !== false) closeModal(); };
+    acts.appendChild(b);
+  });
+  const ov = root.querySelector(".overlay");
+  ov.addEventListener("click", (e) => { if (e.target === ov) closeModal(); });
+  modalClose = () => { root.innerHTML = ""; };
+  onOpen && onOpen(root);
+  autosizeAll(root);
+  // focus sur le premier champ, sinon sur le DERNIER bouton (souvent "Annuler") pour éviter une suppression par erreur
+  const first = root.querySelector("input, textarea, select") || acts.querySelector("button:last-child");
+  first && setTimeout(() => first.focus(), 30);
+}
+function closeModal() {
+  if (modalClose) { const f = modalClose; modalClose = null; f(); }
+  if (needRender && !isTyping()) { needRender = false; setTimeout(render, 0); }
+}
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeModal(); });
+function confirmBox(title, text, okLabel = "Supprimer", danger = true) {
+  return new Promise((resolve) => {
+    openModal({ title, body: `<p>${esc(text)}</p>`, actions: [
+      { label: okLabel, kind: danger ? "danger" : "", onClick: () => resolve(true) },
+      { label: "Annuler", kind: "ghost", onClick: () => resolve(false) },
+    ] });
+    // fermer par le fond ou Échap = annuler
+    const prev = modalClose; modalClose = () => { prev(); resolve(false); };
+  });
+}
+
+// Ajoute un élément à la corbeille
+function toTrash(kind, label, payload, extra = {}) {
+  const t = { id: newId(), kind, at: Date.now(), updatedAt: Date.now(), label, payload: clone(payload), ...extra };
+  S.trash[t.id] = t; persist("trash", t.id, 0);
+  return t.id;
+}
+function restoreTrash(tid, silent) {
+  const t = S.trash[tid];
+  if (!t) return false;
+  const p = clone(t.payload);
+  if (t.kind === "session") { const s = normSession(p); s.id = p.id; saveSession(s, 0); }
+  else if (t.kind === "exercise") {
+    const s = S.sessions[t.sessionId];
+    if (!s) { toast("La séance de cet exercice est dans la corbeille : restaure-la d'abord.", { error: true }); return false; }
+    s.exercises.splice(Math.min(t.index, s.exercises.length), 0, normExercise(p)); saveSession(s, 0);
+  } else if (t.kind === "week") { const w = normWeek(p); w.updatedAt = Date.now(); S.weeks[w.id] = w; persist("weeks", w.id, 0); }
+  else if (t.kind === "type") {
+    const c = cfg(); if (!c.types.some((x) => x.id === p.id)) c.types.splice(Math.min(t.index, c.types.length), 0, p);
+    c.updatedAt = Date.now(); persist("config", null, 0);
+  }
+  delete S.trash[tid]; persist("trash", tid, 0);
+  if (!silent) toast("Restauré");
+  renderSoon();
+  return true;
+}
+
+/* ---------------------------------------------------------------------
+   6. LES ÉCRANS
+   Chaque fonction view…() renvoie le HTML d'un écran.
+   --------------------------------------------------------------------- */
+const VIEWS = ["accueil", "historique", "progres", "semaine", "plus", "seance", "types", "corbeille", "sauvegardes"];
+const TAB_OF = { seance: "accueil", types: "plus", corbeille: "plus", sauvegardes: "plus" };
+
+function stars(target, val, label = "Ressenti") {
+  let h = `<div class="stars" role="group" aria-label="${esc(label)}">`;
+  for (let i = 1; i <= 5; i++) h += `<button type="button" class="${i <= val ? "on" : ""}" data-act="rate" data-target="${target}" data-val="${i}" aria-label="${i} sur 5" aria-pressed="${i <= val}">${icon("heart", true)}</button>`;
+  return h + "</div>";
+}
+function starText(n) { return n ? "♥".repeat(n) + "♡".repeat(5 - n) : ""; }
+
+/* ---- ACCUEIL ---- */
+function viewHome() {
+  const c = cfg(); const today = dateStr(); const ss = sortedSessions();
+  const open = ss.filter((s) => !s.endedAt && s.date >= dateStr(addDays(new Date(), -1)) && s.date <= today);
+  const mon = mondayOf(new Date()); const wk = isoWeek(new Date());
+  const thisWeek = sessionsInRange(dateStr(mon), dateStr(addDays(mon, 6))).length;
+  let h = `<section class="hero"><div class="hello"><p class="small" style="color:var(--ink-2)">${esc(fmtLong(new Date()))} · semaine ${wk.w}</p>
+    <h1>${thisWeek ? `<em>${thisWeek}</em> séance${thisWeek > 1 ? "s" : ""} cette semaine` : "On y va pour <em>une séance</em> ?"}</h1></div>${ART.hero()}</section>`;
+
+  for (const s of open) {
+    const done = s.exercises.filter(exHasData).length;
+    h += `<button class="card resume" data-act="open" data-id="${s.id}" style="text-align:left;cursor:pointer">
+      <span class="lbl">Séance en cours</span>
+      <span class="row"><span class="dot" style="--c:${sessionColor(s)}"></span><b style="font-size:20px">${esc(sessionName(s))}</b><span class="muted">${esc(daysAgo(s.date))}</span></span>
+      <span class="muted small">${s.kind === "muscu" ? `${done}/${s.exercises.length} exercices remplis` : esc(sessionSummary(s))} · touche pour reprendre</span></button>`;
+  }
+
+  h += `<section class="stack"><h2>Nouvelle séance</h2><div class="type-grid">`;
+  for (const t of c.types) {
+    const last = ss.find((s) => s.typeId === t.id);
+    h += `<button class="type-btn" style="--c:${colorVar(t.color)}" data-act="start" data-type="${t.id}"><b>${esc(t.name)}</b><span>${last ? "Dernière : " + esc(daysAgo(last.date)) : "Jamais faite"}</span><span class="art">${kindArt(t.kind)}</span></button>`;
+  }
+  h += `</div><button class="link" data-act="pastsession">+ Noter une séance d'un autre jour</button></section>`;
+
+  // Rappel hebdo
+  const w = S.weeks[wk.id];
+  h += `<section class="card"><div class="section-title"><span class="card-art">${ART.scale()}<h3>Ma semaine</h3></span><button class="btn sm soft" data-act="nav" data-view="semaine">${w && w.weight ? "Voir" : "Noter mon poids"}</button></div>
+    <p class="muted small">${w && w.weight ? `Poids noté : <b class="num" style="color:var(--ink)">${esc(w.weight)} kg</b>` : "Poids de la semaine pas encore noté (1 fois par semaine suffit)."}</p></section>`;
+
+  // Consignes et points à retravailler
+  const latest = latestByExercise();
+  const cons = latest.filter((x) => x.ex.inc && x.ex.inc.on);
+  const flags = latest.filter((x) => x.ex.tech);
+  if (cons.length) {
+    h += `<section class="card"><h3>Consignes pour la prochaine fois</h3><div class="list">` + cons.slice(0, 8).map((x) =>
+      `<div class="li"><span class="dot" style="--c:${sessionColor(x.s)}"></span><span class="grow"><b>${esc(x.ex.name)}</b><br><span class="small muted">${esc(consigneText(x.ex))}</span></span></div>`).join("") + `</div></section>`;
+  }
+  if (flags.length) {
+    h += `<section class="card"><h3>À retravailler</h3><div class="list">` + flags.slice(0, 8).map((x) =>
+      `<div class="li"><span class="badge warn">${icon("warn")}</span><span class="grow"><b>${esc(x.ex.name)}</b><br><span class="small muted">${esc(fmtShort(x.s.date))}${x.ex.note ? " · " + esc(x.ex.note.slice(0, 90)) : ""}</span></span></div>`).join("") + `</div></section>`;
+  }
+  // Rappel d'export si jamais fait / vieux
+  const le = c.lastExportAt;
+  if (ss.length >= 3 && (!le || Date.now() - le > 21 * DAY)) {
+    h += `<section class="card"><h3>Pense à exporter</h3><p class="small muted">${le ? `Dernier export il y a ${Math.round((Date.now() - le) / DAY)} jours.` : "Tu n'as encore jamais exporté tes données."} Un fichier dans ton Drive ou tes mails, et tu ne perds jamais rien.</p><button class="btn ghost" data-act="export">${icon("download")} Exporter maintenant</button></section>`;
+  }
+  // 3 dernières séances
+  if (ss.length) {
+    h += `<section class="card"><div class="section-title"><h3>Dernières séances</h3><button class="link" data-act="nav" data-view="historique">Tout voir</button></div><div class="list">${ss.slice(0, 3).map(sessionRow).join("")}</div></section>`;
+  }
+  return h;
+}
+function sessionRow(s) {
+  const d = parseDate(s.date);
+  const flagged = s.exercises.some((e) => e.tech);
+  return `<button class="srow" data-act="open" data-id="${s.id}">
+    <span class="date">${d.getDate()}<small>${esc(d.toLocaleDateString("fr-FR", { month: "short" }).replace(".", ""))}</small></span>
+    <span class="dot" style="--c:${sessionColor(s)}"></span>
+    <span class="srow-main"><b>${esc(sessionName(s))}${!s.endedAt && s.date >= dateStr(addDays(new Date(), -1)) ? ' <span class="badge good">en cours</span>' : ""}</b><span>${esc(sessionSummary(s))}</span></span>
+    ${flagged ? `<span class="badge warn" title="Exercice à retravailler">${icon("warn")}</span>` : ""}</button>`;
+}
+
+/* ---- SÉANCE (l'écran que tu utilises à la salle) ---- */
+function curSession() { return S.sessions[S.ui.sessionId] || null; }
+function viewSession() {
+  const s = curSession();
+  if (!s) return `<div class="card"><p>Cette séance n'existe plus (elle est peut-être dans la corbeille).</p><button class="btn" data-act="nav" data-view="accueil">Retour à l'accueil</button></div>`;
+  let h = `<section class="ed-head">
+    <div class="row"><button class="btn ghost sm" data-act="nav" data-view="accueil">${icon("back")} Retour</button><span class="grow"></span>
+      ${s.endedAt ? '<span class="badge good">Terminée · modifiable</span>' : '<span class="badge good">En cours</span>'}</div>
+    <div class="ed-title"><span class="dot" style="--c:${sessionColor(s)};width:14px;height:14px"></span><h1>${esc(sessionName(s))}</h1></div>
+    <label class="field">Date<input type="date" id="f-date" data-bind="s.date" value="${esc(s.date)}"></label>
+  </section>`;
+  if (s.kind !== "muscu") h += cardioBlock(s);
+  s.exercises.forEach((ex, i) => { h += exerciseCard(s, ex, i); });
+  h += `<button class="btn soft block" data-act="addex">${icon("plus")} Ajouter un exercice</button>`;
+  h += finisherBlock(s);
+  const today = s.date === dateStr();
+  h += `<section class="card"><h3>Bilan de la séance</h3>
+    ${s.kind === "muscu" ? `<label class="field">Durée de la séance <span class="opt">(sans le cardio de fin)</span><input id="f-sdur" data-bind="s.dur" data-v="dur" value="${esc(s.dur)}" placeholder="ex. 55 ou 1h05"></label>
+    ${today ? `<button type="button" class="link" data-act="calcdur">Calculer depuis le début de la séance</button>` : ""}<div class="hint" data-hint="bilan" hidden></div>` : ""}
+    <div class="durbox" id="durOut">${durText(s)}</div>
+    <span class="lbl">Ressenti général</span>${stars("s", s.rating)}
+    <label class="field">Note de séance <span class="opt">(facultatif)</span><textarea id="f-snote" data-bind="s.note" placeholder="Énergie, contexte, ce que tu retiens…">${esc(s.note)}</textarea></label></section>`;
+  h += `<div class="sticky-actions">${s.endedAt ? "" : `<button class="btn block" data-act="finish">${icon("check")} Terminer la séance</button>`}
+    <button class="btn danger block" data-act="delsession">${icon("trash")} Supprimer cette séance</button></div>`;
+  return h;
+}
+function durText(s) {
+  const d = sessionDurations(s); const mainLbl = s.kind === "muscu" ? "Séance" : s.kind === "course" ? "Course" : "Entraînement";
+  const parts = [`${mainLbl} ${ok(d.main) ? fmtDur(d.main) : "–"}`];
+  if (s.finisher) parts.push(`cardio ${ok(d.fin) ? fmtDur(d.fin) : "–"}`);
+  return `<span class="small">Durée totale${s.finisher ? " (séance + cardio)" : ""}</span><b>${ok(d.total) ? fmtDur(d.total) : "–"}</b><span class="small muted">${esc(parts.join(" + "))}</span>`;
+}
+// Cardio de fin de séance : un petit bloc à part (tapis, vélo…) après la séance
+function finisherBlock(s) {
+  const f = s.finisher;
+  if (!f) return `<section class="card"><div class="card-art">${ART.bottle()}<div><h3>Cardio de fin de séance</h3><p class="small muted">Le petit cardio à part, après ta séance (tapis, vélo…).</p></div></div>
+    <button class="btn soft" data-act="addfin">${icon("plus")} Ajouter le cardio de fin</button></section>`;
+  let last = null;
+  for (const x of sortedSessions()) { if (x.id !== s.id && x.finisher && x.finisher.dur && (x.date < s.date || (x.date === s.date && x.createdAt < s.createdAt))) { last = x; break; } }
+  const types = cfg().finisherTypes || [];
+  return `<section class="card"><div class="card-art">${ART.bottle()}<h3>Cardio de fin de séance</h3></div>
+    ${last ? `<div class="last"><span>Dernière fois · <b>${esc(fmtDay(last.date))}</b></span><span>${esc([last.finisher.type, ok(parseDur(last.finisher.dur)) ? fmtDur(parseDur(last.finisher.dur)) : "", last.finisher.dist ? last.finisher.dist + " km" : ""].filter(Boolean).join(" · "))}</span></div>` : ""}
+    <div class="chips">${types.map((x) => `<button type="button" class="chip" data-act="fintype" data-val="${esc(x)}" aria-pressed="${f.type === x}">${esc(x)}</button>`).join("")}</div>
+    <div class="grid2"><label class="field">Durée<input id="f-fdur" data-bind="fin.dur" data-v="dur" value="${esc(f.dur)}" placeholder="${esc(f.tdur ? "ex. " + f.tdur : "ex. 15")}"></label>
+      <label class="field">Distance (km)<input id="f-fdist" inputmode="decimal" data-bind="fin.dist" data-v="num" value="${esc(f.dist)}" placeholder="facultatif"></label></div>
+    <div class="hint" data-hint="fin" hidden></div>
+    <textarea id="f-fnote" data-bind="fin.note" placeholder="Remarque (inclinaison, vitesse, sensations…)">${esc(f.note)}</textarea>
+    <button type="button" class="btn danger sm" data-act="delfin">${icon("trash")} Retirer le cardio de fin</button></section>`;
+}
+function cardioBlock(s) {
+  const c = s.cardio; const isRun = s.kind === "course"; const subs = isRun ? cfg().runTypes : cfg().boxeTypes;
+  const st = cardioStats(s); const last = lastCardio(s);
+  let h = `<section class="card"><h3>${isRun ? "Ta course" : "Ton entraînement"}</h3>`;
+  if (last && last.cardio.inc && last.cardio.inc.on) {
+    h += `<div class="consigne">${icon("target")}<span><b>Consigne de la dernière fois :</b> +${esc(last.cardio.inc.amount)} ${esc(last.cardio.inc.unit)}</span></div>`;
+  }
+  if (last) {
+    const ls = cardioStats(last);
+    h += `<div class="last"><span>Dernière fois · <b>${esc(fmtDay(last.date))}</b></span><span>${esc([last.cardio.sub, ok(ls.dist) ? fmtNum(ls.dist, 2) + " km" : "", ok(ls.dur) ? fmtDur(ls.dur) : "", ok(ls.pace) && isRun ? fmtPace(ls.pace) + "/km" : "", starText(last.cardio.rating)].filter(Boolean).join(" · "))}</span>${last.cardio.note ? `<span class="q">« ${esc(last.cardio.note.slice(0, 200))} »</span>` : ""}</div>`;
+  }
+  h += `<span class="lbl">Type</span><div class="chips">` + subs.map((x) => `<button type="button" class="chip" data-act="sub" data-val="${esc(x)}" aria-pressed="${c.sub === x}">${esc(x)}</button>`).join("") + `</div>`;
+  if (isRun) {
+    h += `<div class="grid2"><label class="field">Distance (km)<input id="f-dist" inputmode="decimal" data-bind="c.dist" data-v="num" value="${esc(c.dist)}" placeholder="ex. 5,2"></label>
+      <label class="field">Durée<input id="f-dur" inputmode="text" data-bind="c.dur" data-v="dur" value="${esc(c.dur)}" placeholder="ex. 28:30"></label></div>
+      <div class="hint" data-hint="cardio" hidden></div>
+      <div><span class="lbl">Allure</span><div class="pace" id="paceOut">${ok(st.pace) ? `${fmtPace(st.pace)}/km · ${fmtNum(st.speed, 1)} km/h` : "–"}</div></div>`;
+  } else {
+    h += `<div class="grid2"><label class="field">Durée<input id="f-dur" data-bind="c.dur" data-v="dur" value="${esc(c.dur)}" placeholder="ex. 45 ou 1h10"></label>
+      <label class="field">Rounds <span class="opt">(facultatif)</span><input id="f-rounds" inputmode="numeric" data-bind="c.rounds" data-v="int" value="${esc(c.rounds)}" placeholder="ex. 6"></label></div>
+      <div class="hint" data-hint="cardio" hidden></div>`;
+  }
+  h += `<span class="lbl">Ressenti</span>${stars("c", c.rating)}
+    <label class="field">Remarque<textarea id="f-cnote" data-bind="c.note" placeholder="Sensations, météo, technique…">${esc(c.note)}</textarea></label>
+    ${incBlock("c", c.inc, isRun ? ["km", "min"] : ["min", "rounds"])}</section>`;
+  return h;
+}
+function incBlock(prefix, inc, units) {
+  return `<div class="stack" style="gap:6px"><label class="toggle"><input type="checkbox" id="inc-${prefix}" data-bind="${prefix}.inc.on" ${inc.on ? "checked" : ""}> Augmenter la prochaine fois ?</label>
+    <span class="inc-amt" ${inc.on ? "" : "hidden"}>de <input id="inca-${prefix}" inputmode="decimal" data-bind="${prefix}.inc.amount" data-v="num" value="${esc(inc.amount)}" aria-label="De combien">
+    <select id="incu-${prefix}" data-bind="${prefix}.inc.unit" aria-label="Unité">${units.map((u) => { const [v, l] = Array.isArray(u) ? u : [u, u]; return `<option value="${v}" ${inc.unit === v ? "selected" : ""}>${l}</option>`; }).join("")}</select></span></div>`;
+}
+function exerciseCard(s, ex, i) {
+  const last = lastTime(ex.name, s);
+  const cons = last ? consigneText(last.ex) : "";
+  const done = ex.sets.filter((x) => x.done).length;
+  const p = `ex.${ex.id}`;
+  let h = `<article class="card ex ${ex.tech ? "flag" : ""}" id="card-${ex.id}">
+    <div class="ex-head"><input class="ex-name" id="n-${ex.id}" data-bind="${p}.name" value="${esc(ex.name)}" aria-label="Nom de l'exercice">
+      <span class="ex-count">${done}/${ex.sets.length} séries</span></div>`;
+  if (ex.tech) h += `<span><span class="badge warn">${icon("warn")} À retravailler</span></span>`;
+  if (cons) h += `<div class="consigne">${icon("target")}<span><b>Consigne :</b> ${esc(cons)}</span></div>`;
+  if (!ex.tech && last && last.ex.tech) h += `<div class="flagnote">${icon("warn")}<span>Technique notée « à retravailler » la dernière fois.</span></div>`;
+  if (last) {
+    h += `<div class="last"><span>Dernière fois · <b>${esc(fmtDay(last.s.date))}</b></span><span><b class="num">${esc(setsSummary(last.ex))}</b>${last.ex.rating ? " · " + starText(last.ex.rating) : ""}</span>${last.ex.note ? `<span class="q">« ${esc(last.ex.note.slice(0, 220))} »</span>` : ""}</div>`;
+  } else h += `<div class="last"><span>Première fois sur cet exercice : les gris sont des suggestions.</span></div>`;
+  h += `<div class="wmode" role="group" aria-label="Comment tu notes le poids"><button type="button" data-act="wmode" data-ex="${ex.id}" data-m="total" aria-pressed="${!isSide(ex)}">Poids total</button><button type="button" data-act="wmode" data-ex="${ex.id}" data-m="side" aria-pressed="${isSide(ex)}">Par côté</button></div>`;
+  if (isSide(ex)) h += `<div class="barrow"><span>Barre</span><input id="bar-${ex.id}" inputmode="decimal" data-bind="${p}.bar" data-v="num" value="${esc(ex.bar)}" placeholder="ex. 20" aria-label="Poids de la barre en kg (facultatif)"><span>kg <span class="muted">· facultatif</span></span></div>`;
+  h += `<div class="sets"><div class="set set-h"><span></span><span style="text-align:center">${isSide(ex) ? "kg/côté" : "kg"}</span><span style="text-align:center">reps</span><span style="text-align:center">fait</span><span></span></div>`;
+  ex.sets.forEach((st, j) => {
+    h += `<div class="set ${st.done ? "done" : ""}"><span class="set-n">${j + 1}</span>
+      <input id="kg-${ex.id}-${j}" inputmode="decimal" autocomplete="off" data-bind="set.${ex.id}.${j}.kg" data-v="num" value="${esc(st.kg)}" placeholder="${esc(st.tkg || "kg")}" aria-label="Série ${j + 1} : poids en kg">
+      <input id="rp-${ex.id}-${j}" inputmode="numeric" autocomplete="off" data-bind="set.${ex.id}.${j}.reps" data-v="int" value="${esc(st.reps)}" placeholder="${esc(st.treps || "reps")}" aria-label="Série ${j + 1} : répétitions">
+      <button type="button" class="check" data-act="setdone" data-ex="${ex.id}" data-i="${j}" aria-pressed="${st.done}" aria-label="Série ${j + 1} faite">${icon("check")}</button>
+      <button type="button" class="x" data-act="delset" data-ex="${ex.id}" data-i="${j}" aria-label="Retirer la série ${j + 1}">${icon("x")}</button></div>`;
+  });
+  h += `</div><div class="hint" data-hint="${ex.id}" hidden></div>
+    ${isSide(ex) ? `<div class="totline" id="tot-${ex.id}">${esc(totLine(ex))}</div>` : ""}
+    <button type="button" class="btn ghost sm" data-act="addset" data-ex="${ex.id}">${icon("plus")} Série</button>
+    <span class="lbl">Ressenti</span>${stars("ex:" + ex.id, ex.rating)}
+    <textarea id="note-${ex.id}" data-bind="${p}.note" placeholder="Remarque (ex. bonne forme, revoir la descente…)">${esc(ex.note)}</textarea>
+    <div class="chips">${QUICK_NOTES.map((q) => `<button type="button" class="chip" data-act="quick" data-ex="${ex.id}" data-text="${esc(q)}">${esc(q)}</button>`).join("")}</div>
+    <label class="toggle"><input type="checkbox" id="tech-${ex.id}" data-bind="${p}.tech" ${ex.tech ? "checked" : ""}> Technique à retravailler</label>
+    ${incBlock(p, ex.inc, [["kg", unitLbl(ex)], ["reps", "reps"]])}
+    <div class="ex-tools"><button type="button" data-act="moveex" data-ex="${ex.id}" data-dir="-1" aria-label="Monter l'exercice" ${i === 0 ? "disabled" : ""}>${icon("up")}</button>
+      <button type="button" data-act="moveex" data-ex="${ex.id}" data-dir="1" aria-label="Descendre l'exercice" ${i === s.exercises.length - 1 ? "disabled" : ""}>${icon("down")}</button>
+      <span class="grow"></span>
+      <button type="button" class="del" data-act="delex" data-ex="${ex.id}">${icon("trash")} Supprimer l'exercice</button></div></article>`;
+  return h;
+}
+
+function totLine(ex) {
+  const st = exStats(ex);
+  return ok(st.max) ? `Charge totale réelle de ta meilleure série : ${fmtNum(st.max, 1)} kg (2 × côté${ok(parseNum(ex.bar)) ? " + barre" : ""})` : "La charge totale (2 × côté + barre) sera calculée pour tes graphiques.";
+}
+/* ---- HISTORIQUE ---- */
+function viewHistory() {
+  const c = cfg(); const all = sortedSessions();
+  const list = all.filter((s) => S.ui.histType === "all" || s.typeId === S.ui.histType);
+  const today = new Date(); const mon = mondayOf(today);
+  const weekN = sessionsInRange(dateStr(mon), dateStr(addDays(mon, 6))).length;
+  const monthN = sessionsInRange(dateStr(new Date(today.getFullYear(), today.getMonth(), 1)), dateStr(today)).length;
+  const avg8 = sessionsInRange(dateStr(addDays(mon, -56)), dateStr(addDays(mon, -1))).length / 8;
+  let h = `<h1>Historique</h1>
+    <div class="tiles"><div class="tile"><b>${weekN}</b><span>cette semaine</span></div><div class="tile"><b>${monthN}</b><span>ce mois-ci</span></div><div class="tile"><b>${fmtNum(avg8, 1)}</b><span>par semaine (8 dern.)</span></div></div>
+    <div class="chips"><button class="chip" data-act="histtype" data-type="all" aria-pressed="${S.ui.histType === "all"}">Toutes</button>${c.types.map((t) => `<button class="chip" data-act="histtype" data-type="${t.id}" aria-pressed="${S.ui.histType === t.id}"><span class="dot" style="--c:${colorVar(t.color)}"></span> ${esc(t.name)}</button>`).join("")}</div>`;
+  h += `<section class="card">${calendar(list)}</section>`;
+  // Barres : séances par semaine (12 dernières semaines)
+  const items = [];
+  for (let k = 11; k >= 0; k--) {
+    const m = addDays(mon, -7 * k); const n = list.filter((s) => s.date >= dateStr(m) && s.date <= dateStr(addDays(m, 6))).length;
+    items.push({ label: fmtShort(dateStr(m)), value: n, tip: `${n} séance${n > 1 ? "s" : ""}`, sub: `sem. du ${fmtShort(dateStr(m))}` });
+  }
+  h += `<section class="card"><h3>Régularité</h3><p class="small muted">Séances par semaine, 12 dernières semaines</p>${chartBox({ type: "bars", items, label: "Séances par semaine" })}</section>`;
+  let rows = list;
+  if (S.ui.histDate) rows = list.filter((s) => s.date === S.ui.histDate);
+  h += `<section class="card"><div class="section-title"><h3>${S.ui.histDate ? esc(fmtDay(S.ui.histDate)) : "Toutes les séances"}</h3>${S.ui.histDate ? `<button class="link" data-act="clearday">Tout afficher</button>` : `<span class="muted small">${rows.length}</span>`}</div>`;
+  if (!rows.length) h += all.length ? `<p class="empty">Aucune séance pour ce filtre.</p>` : emptyArt("Aucune séance pour l'instant. Lance ta première depuis l'accueil !");
+  else {
+    let curMonth = "";
+    h += `<div class="list">`;
+    for (const s of rows.slice(0, 300)) {
+      const mLabel = parseDate(s.date).toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
+      if (mLabel !== curMonth && !S.ui.histDate) { curMonth = mLabel; h += `<div class="lbl" style="padding-top:10px">${esc(mLabel)}</div>`; }
+      h += sessionRow(s);
+    }
+    h += `</div>`;
+  }
+  return h + `</section>`;
+}
+function calendar(list) {
+  const base = S.ui.calMonth ? parseDate(S.ui.calMonth) : new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+  const first = new Date(base.getFullYear(), base.getMonth(), 1); const start = mondayOf(first);
+  const byDate = {}; for (const s of list) (byDate[s.date] = byDate[s.date] || []).push(s);
+  const today = dateStr();
+  let h = `<div class="cal-head"><button class="icon-btn" data-act="calnav" data-dir="-1" aria-label="Mois précédent">${icon("back")}</button>
+    <h3 style="text-transform:capitalize">${esc(first.toLocaleDateString("fr-FR", { month: "long", year: "numeric" }))}</h3>
+    <button class="icon-btn" data-act="calnav" data-dir="1" aria-label="Mois suivant" style="transform:scaleX(-1)">${icon("back")}</button></div>
+    <div class="cal">${["L", "M", "M", "J", "V", "S", "D"].map((d) => `<span class="dow">${d}</span>`).join("")}`;
+  for (let i = 0; i < 42; i++) {
+    const d = addDays(start, i); const ds = dateStr(d);
+    if (i >= 35 && d.getMonth() !== first.getMonth()) break;
+    const ses = byDate[ds] || [];
+    h += `<button data-act="calday" data-date="${ds}" class="${d.getMonth() !== first.getMonth() ? "out" : ""} ${ds === today ? "today" : ""} ${S.ui.histDate === ds ? "sel" : ""}" aria-label="${esc(fmtDay(ds))}, ${ses.length} séance(s)">${d.getDate()}<span class="dots">${ses.slice(0, 3).map((s) => `<i style="--c:${sessionColor(s)}"></i>`).join("")}</span></button>`;
+  }
+  return h + `</div>`;
+}
+
+/* ---- PROGRÈS (graphiques) ---- */
+function viewProgress() {
+  const tab = S.ui.progTab;
+  let h = `<h1>Progrès</h1><div class="seg" role="group" aria-label="Catégorie">${[["muscu", "Muscu"], ["course", "Course"], ["boxe", "Boxe"], ["temps", "Temps"], ["poids", "Poids"]].map(([k, l]) => `<button data-act="progtab" data-tab="${k}" aria-pressed="${tab === k}">${l}</button>`).join("")}</div>`;
+  const asc = sortedSessions().slice().reverse();
+  if (tab === "muscu") {
+    const counts = new Map();
+    for (const s of asc) for (const e of s.exercises) if (exHasData(e)) { const k = norm(e.name); const o = counts.get(k) || { name: e.name, n: 0 }; o.n++; o.name = e.name; counts.set(k, o); }
+    const exs = [...counts.entries()].sort((a, b) => b[1].n - a[1].n);
+    if (!exs.length) return h + `<div class="card">${emptyArt("Les courbes apparaîtront dès que tu auras noté des séries.", ART.dumbbell)}</div>`;
+    if (!S.ui.progEx || !counts.has(S.ui.progEx)) S.ui.progEx = exs[0][0];
+    const metric = S.ui.progMetric;
+    const pts = []; const rows = [];
+    for (const s of asc) for (const e of s.exercises) {
+      if (norm(e.name) !== S.ui.progEx || !exHasData(e)) continue;
+      const st = exStats(e); const v = metric === "max" ? st.max : metric === "e1rm" ? st.e1rm : st.volume || null;
+      rows.push({ s, e, st });
+      if (ok(v)) pts.push({ t: parseDate(s.date).getTime(), y: v, tip: `${fmtNum(v, 1)} kg`, sub: `${fmtShort(s.date)} · ${setsSummary(e)}` });
+    }
+    const best = rows.reduce((b, r) => (ok(r.st.max) && (!b || r.st.max > b.st.max) ? r : b), null);
+    h += `<section class="card"><label class="field">Exercice<select id="f-progex" data-act-change="progex">${exs.map(([k, o]) => `<option value="${esc(k)}" ${k === S.ui.progEx ? "selected" : ""}>${esc(o.name)} (${o.n})</option>`).join("")}</select></label>
+      <div class="chips">${[["max", "Charge max"], ["e1rm", "1RM estimé"], ["vol", "Volume"]].map(([k, l]) => `<button class="chip" data-act="metric" data-m="${k}" aria-pressed="${metric === k}">${l}</button>`).join("")}</div>
+      <p class="small muted">${metric === "max" ? "La charge totale la plus lourde à chaque séance (un poids « par côté » compte 2 × côté + barre)." : metric === "e1rm" ? "Estimation de ton max sur 1 répétition (formule d'Epley : poids × (1 + reps/30))." : "Volume = somme des poids × répétitions de la séance."}</p>
+      ${chartBox({ type: "line", pts, unit: "kg", label: "Évolution " + counts.get(S.ui.progEx).name })}
+      ${best ? `<p class="small">Record : <b class="num">${fmtNum(best.st.max, 2)} kg</b> le ${esc(fmtShort(best.s.date))}</p>` : ""}
+      <details><summary>Détail des séances (${rows.length})</summary><div class="tbl-wrap"><table class="data"><thead><tr><th>Date</th><th>Séries</th><th>Max</th><th>Ressenti</th></tr></thead><tbody>
+      ${rows.slice().reverse().map((r) => `<tr><td>${esc(fmtShort(r.s.date))}</td><td>${esc(setsSummary(r.e))}</td><td>${ok(r.st.max) ? fmtNum(r.st.max, 2) : "–"}</td><td>${starText(r.e.rating)}${r.e.tech ? " ⚠" : ""}</td></tr>`).join("")}</tbody></table></div></details></section>`;
+    return h;
+  }
+  if (tab === "course") {
+    const runs = asc.filter((s) => s.kind === "course").map((s) => ({ s, c: cardioStats(s) }));
+    if (!runs.length) return h + `<div class="card">${emptyArt("Aucune course notée pour l'instant.", ART.sneaker)}</div>`;
+    const dpts = runs.filter((r) => ok(r.c.dist)).map((r) => ({ t: parseDate(r.s.date).getTime(), y: r.c.dist, tip: `${fmtNum(r.c.dist, 2)} km`, sub: `${fmtShort(r.s.date)} · ${r.s.cardio.sub}` }));
+    const ppts = runs.filter((r) => ok(r.c.pace)).map((r) => ({ t: parseDate(r.s.date).getTime(), y: r.c.pace, tip: `${fmtPace(r.c.pace)}/km`, sub: `${fmtShort(r.s.date)} · ${fmtNum(r.c.dist, 2)} km` }));
+    const month = runs.filter((r) => r.s.date.slice(0, 7) === dateStr().slice(0, 7)).reduce((a, r) => a + (ok(r.c.dist) ? r.c.dist : 0), 0);
+    h += `<div class="tiles"><div class="tile"><b>${runs.length}</b><span>courses</span></div><div class="tile"><b>${fmtNum(month, 1)}</b><span>km ce mois</span></div><div class="tile"><b>${ppts.length ? fmtPace(Math.min(...ppts.map((p) => p.y))) : "–"}</b><span>meilleure allure</span></div></div>
+      <section class="card"><h3>Distance</h3>${chartBox({ type: "line", pts: dpts, unit: "km", label: "Distance par course" })}</section>
+      <section class="card"><h3>Allure</h3><p class="small muted">Minutes par km : plus c'est bas, plus tu vas vite.</p>${chartBox({ type: "line", pts: ppts, fmt: "pace", label: "Allure par course" })}</section>
+      <section class="card"><details><summary>Toutes les courses (${runs.length})</summary><div class="tbl-wrap"><table class="data"><thead><tr><th>Date</th><th>Type</th><th>Km</th><th>Durée</th><th>Allure</th></tr></thead><tbody>
+      ${runs.slice().reverse().map((r) => `<tr><td>${esc(fmtShort(r.s.date))}</td><td>${esc(r.s.cardio.sub)}</td><td>${fmtNum(r.c.dist, 2)}</td><td>${fmtDur(r.c.dur)}</td><td>${fmtPace(r.c.pace)}</td></tr>`).join("")}</tbody></table></div></details></section>`;
+    return h;
+  }
+  if (tab === "boxe") {
+    const bx = asc.filter((s) => s.kind === "boxe").map((s) => ({ s, c: cardioStats(s) }));
+    if (!bx.length) return h + `<div class="card">${emptyArt("Aucune séance de boxe notée pour l'instant.", ART.glove)}</div>`;
+    const pts = bx.filter((r) => ok(r.c.dur)).map((r) => ({ t: parseDate(r.s.date).getTime(), y: r.c.dur, tip: fmtDur(r.c.dur), sub: `${fmtShort(r.s.date)} · ${r.s.cardio.sub}` }));
+    h += `<section class="card"><h3>Durée des séances</h3>${chartBox({ type: "line", pts, unit: "min", label: "Durée boxe" })}</section>
+      <section class="card"><details open><summary>Toutes les séances (${bx.length})</summary><div class="tbl-wrap"><table class="data"><thead><tr><th>Date</th><th>Type</th><th>Durée</th><th>Ressenti</th></tr></thead><tbody>
+      ${bx.slice().reverse().map((r) => `<tr><td>${esc(fmtShort(r.s.date))}</td><td>${esc(r.s.cardio.sub)}</td><td>${fmtDur(r.c.dur)}</td><td>${starText(r.s.cardio.rating)}</td></tr>`).join("")}</tbody></table></div></details></section>`;
+    return h;
+  }
+  if (tab === "temps") {
+    // Temps d'entraînement par semaine : séance + cardio de fin
+    const mon = mondayOf(new Date()); const items = []; let wk = { tot: 0, fin: 0, n: 0 };
+    for (let k = 11; k >= 0; k--) {
+      const m = addDays(mon, -7 * k); let tot = 0, fin = 0, n = 0;
+      for (const s of sessionsInRange(dateStr(m), dateStr(addDays(m, 6)))) { const d = sessionDurations(s); if (ok(d.total)) { tot += d.total; n++; } if (ok(d.fin)) fin += d.fin; }
+      if (k === 0) wk = { tot, fin, n };
+      items.push({ label: fmtShort(dateStr(m)), value: Math.round((tot / 60) * 10) / 10, tip: fmtDur(tot), sub: `sem. du ${fmtShort(dateStr(m))}${fin ? " · dont cardio de fin " + fmtDur(fin) : ""}` });
+    }
+    const withDur = sortedSessions().map(sessionDurations).filter((d) => ok(d.total));
+    const avg = withDur.length ? withDur.reduce((a, d) => a + d.total, 0) / withDur.length : null;
+    h += `<div class="tiles"><div class="tile"><b>${wk.tot ? fmtDur(wk.tot) : "–"}</b><span>cette semaine</span></div><div class="tile"><b>${avg ? fmtDur(avg) : "–"}</b><span>par séance en moyenne</span></div><div class="tile"><b>${wk.fin ? fmtDur(wk.fin) : "–"}</b><span>cardio de fin cette sem.</span></div></div>
+      <section class="card"><h3>Heures d'entraînement</h3><p class="small muted">Par semaine, séance + cardio de fin compris (12 dernières semaines).</p>
+      ${withDur.length ? chartBox({ type: "bars", items, label: "Heures d'entraînement par semaine" }) : emptyArt("Note la durée de tes séances (dans « Bilan de la séance ») pour voir ce graphique.", ART.bottle)}</section>`;
+    return h;
+  }
+  // Poids corporel
+  return h + weightChartCard();
+}
+function weightChartCard() {
+  const ws = Object.values(S.weeks).filter((w) => ok(parseNum(w.weight)) && w.monday).sort((a, b) => a.monday.localeCompare(b.monday));
+  const pts = ws.map((w) => ({ t: parseDate(w.monday).getTime(), y: parseNum(w.weight), tip: `${fmtNum(parseNum(w.weight), 1)} kg`, sub: `sem. du ${fmtShort(w.monday)}` }));
+  let extra = "";
+  if (pts.length >= 2) { const d = pts[pts.length - 1].y - pts[0].y; extra = `<p class="small">Depuis le ${esc(fmtShort(ws[0].monday))} : <b class="num">${d > 0 ? "+" : ""}${fmtNum(d, 1)} kg</b></p>`; }
+  return `<section class="card"><div class="card-art">${ART.scale()}<h3>Poids corporel</h3></div>${pts.length ? chartBox({ type: "line", pts, unit: "kg", label: "Poids corporel" }) + extra : emptyArt("Note ton poids dans l'onglet Semaine pour voir la courbe.", ART.scale)}</section>`;
+}
+
+/* ---- SEMAINE ---- */
+function viewWeek() {
+  const mon = addDays(mondayOf(new Date()), 7 * S.ui.weekOffset); const wk = isoWeek(mon);
+  const w = S.weeks[wk.id] || { weight: "", food: "", note: "" };
+  const sun = addDays(mon, 6);
+  const ses = sessionsInRange(dateStr(mon), dateStr(sun));
+  let h = `<h1>Ma semaine</h1>
+    <div class="cal-head"><button class="icon-btn" data-act="weeknav" data-dir="-1" aria-label="Semaine précédente">${icon("back")}</button>
+    <div style="text-align:center"><b>Semaine ${wk.w}</b><br><span class="small muted">du ${esc(fmtShort(dateStr(mon)))} au ${esc(fmtShort(dateStr(sun)))}${S.ui.weekOffset === 0 ? " · en cours" : ""}</span></div>
+    <button class="icon-btn" data-act="weeknav" data-dir="1" aria-label="Semaine suivante" style="transform:scaleX(-1)" ${S.ui.weekOffset >= 0 ? "disabled" : ""}>${icon("back")}</button></div>
+    <section class="card">
+      <label class="field">Poids corporel (kg)<input id="f-weight" inputmode="decimal" data-bind="w.weight" data-v="num" value="${esc(w.weight)}" placeholder="ex. 68,4"></label>
+      <div class="hint" data-hint="week" hidden></div>
+      <label class="field">Alimentation <span class="opt">(facultatif, quand tu en as envie)</span><textarea id="f-food" data-bind="w.food" placeholder="Ce que tu veux noter : repas, écarts, protéines…">${esc(w.food)}</textarea></label>
+      <label class="field">Note de la semaine <span class="opt">(facultatif)</span><textarea id="f-wnote" data-bind="w.note" placeholder="Énergie, sommeil, fatigue, stress…">${esc(w.note)}</textarea></label>
+      <p class="small muted">${ses.length} séance${ses.length > 1 ? "s" : ""} cette semaine-là${ses.length ? " : " + ses.map((s) => esc(sessionName(s))).join(", ") : ""}.</p>
+      ${S.weeks[wk.id] ? `<button class="btn danger sm" data-act="delweek" data-id="${wk.id}">${icon("trash")} Effacer cette semaine</button>` : ""}
+    </section>`;
+  h += weightChartCard();
+  const past = Object.values(S.weeks).filter((x) => x.id !== wk.id && (x.weight || x.food || x.note)).sort((a, b) => (b.monday || "").localeCompare(a.monday || ""));
+  if (past.length) {
+    h += `<section class="card"><h3>Semaines précédentes</h3><div class="list">${past.slice(0, 52).map((x) =>
+      `<button class="srow" data-act="gotoweek" data-monday="${x.monday}"><span class="srow-main"><b>Sem. du ${esc(fmtShort(x.monday))}${x.weight ? ` · <span class="num">${esc(x.weight)} kg</span>` : ""}</b><span>${esc((x.note || x.food || "").slice(0, 80))}</span></span></button>`).join("")}</div></section>`;
+  }
+  return h;
+}
+
+/* ---- PLUS (réglages + données) ---- */
+function modeInfo() {
+  if (Store.mode === "cloud" && Store.provider === "firebase") return { title: "Synchronisé avec ta base Firebase", text: `Connecté en tant que ${(Store.fbUser && Store.fbUser.email) || "toi"}. Tes données sont dans ta propre base Firebase (Google) : tu les retrouves sur ton téléphone et ton ordi en te connectant avec le même compte. Les règles de sécurité de ta base font que toi seul peux les lire. Sans réseau, tes saisies restent sur l'appareil et partent dès que la connexion revient. L'export reste ton filet de sécurité.` };
+  if (Store.mode === "cloud") return { title: "Synchronisé avec ton compte Claude", text: "Tes données sont dans la base privée de cette page, liée à ton compte : tu retrouves tout sur ton téléphone et ton ordi en ouvrant le même lien, connecté à Claude. Même si tu partages le lien, personne d'autre ne voit tes données. Sans réseau, tes saisies restent sur l'appareil et partent dès le retour de la connexion. Limites : il faut être connecté à Claude, et si tu supprimes cette page, ses données partent avec. D'où l'export régulier." };
+  if (Store.mode === "offline" && Store.needLogin) return { title: "Pas encore connecté", text: "Tes données sont gardées sur cet appareil. Connecte-toi ci-dessous pour les synchroniser avec ta base." };
+  if (Store.mode === "offline") return { title: "Hors ligne : copie de cet appareil", text: (Store.offlineMsg || "") + " Ce que tu saisis est gardé ici et sera envoyé dès que la base répond (recharge la page avec du réseau)." };
+  if (Store.mode === "local") return { title: "Données dans ce navigateur", text: "Tes données restent dans ce navigateur, sur cet appareil uniquement : elles disparaissent si tu vides les données du site ou changes d'appareil. Pour les avoir sur ton téléphone ET ton ordi, active la synchronisation Firebase ci-dessous (gratuit). Sinon, exporte régulièrement." };
+  return { title: "Connexion…", text: "" };
+}
+function viewMore() {
+  const c = cfg(); const mi = modeInfo(); const mode = LS.get("carnet.theme", "auto");
+  const nTrash = Object.keys(S.trash).length;
+  return `<h1>Plus</h1>
+  <section class="card mode-card"><h3>${esc(mi.title)}</h3><p class="small">${esc(mi.text)}</p></section>
+  ${syncCard()}
+  <section class="card"><h3>Mes séances types</h3><p class="small muted">Les exercices pré-remplis quand tu lances une séance. Ajoute, renomme, réordonne.</p>
+    <div class="list">${c.types.map((t) => `<button class="srow" data-act="edittype" data-id="${t.id}"><span class="dot" style="--c:${colorVar(t.color)}"></span><span class="srow-main"><b>${esc(t.name)}</b><span>${t.kind === "muscu" ? `${t.exercises.length} exercices` : esc(KIND_LABEL[t.kind])}</span></span></button>`).join("")}</div>
+    <button class="btn soft" data-act="addtype">${icon("plus")} Nouveau type de séance</button>
+    <label class="field">Augmentation proposée par défaut (kg)<input id="f-incdef" inputmode="decimal" data-bind="cfg.incDefault" data-v="num" value="${esc(c.incDefault)}"></label>
+    <label class="field">Types de cardio de fin <span class="opt">(séparés par des virgules)</span><textarea id="f-fintypes" data-bind="cfg.finisherTypes">${esc((c.finisherTypes || []).join(", "))}</textarea></label></section>
+  <section class="card"><h3>Mes données</h3>
+    <p class="small muted">${plural(Object.keys(S.sessions).length, "séance")} · ${plural(Object.keys(S.weeks).length, "semaine notée", "semaines notées")}${c.lastExportAt ? ` · dernier export le ${esc(fmtWhen(c.lastExportAt))}` : " · jamais exporté"}</p>
+    <div class="grid2"><button class="btn ghost" data-act="export">${icon("download")} Exporter</button><button class="btn ghost" data-act="import">${icon("upload")} Importer</button></div>
+    <button class="btn ghost" data-act="nav" data-view="sauvegardes">${icon("restore")} Sauvegardes et retour arrière</button>
+    <button class="btn ghost" data-act="nav" data-view="corbeille">${icon("trash")} Corbeille${nTrash ? ` (${nTrash})` : ""}</button></section>
+  <section class="card"><h3>Apparence</h3><div class="seg" role="group" aria-label="Thème">${[["auto", "Auto"], ["light", "Clair"], ["dark", "Sombre"]].map(([k, l]) => `<button data-act="setmode" data-mode="${k}" aria-pressed="${mode === k}">${l}</button>`).join("")}</div></section>
+  <div class="version">${ART.flowers()}<span>Carnet d'entraînement · version ${APP_VERSION}</span></div>`;
+}
+function viewTypes() {
+  const t = cfg().types.find((x) => x.id === S.ui.editTypeId);
+  if (!t) return `<div class="card"><p>Type introuvable.</p><button class="btn" data-act="nav" data-view="plus">Retour</button></div>`;
+  const subsKey = t.kind === "course" ? "runTypes" : "boxeTypes";
+  let h = `<div class="row"><button class="btn ghost sm" data-act="nav" data-view="plus">${icon("back")} Retour</button></div>
+    <section class="card"><label class="field">Nom<input id="t-name" data-bind="t.name" value="${esc(t.name)}"></label>
+    <label class="field">Genre de séance<select id="t-kind" data-bind="t.kind">${Object.entries(KIND_LABEL).map(([k, l]) => `<option value="${k}" ${t.kind === k ? "selected" : ""}>${esc(l)}</option>`).join("")}</select></label>
+    <span class="lbl">Couleur</span><div class="swatches">${[1, 2, 3, 4, 5, 6, 7, 8].map((n) => `<button style="--c:${colorVar(n)}" data-act="typecolor" data-n="${n}" aria-pressed="${t.color === n}" aria-label="Couleur ${n}"></button>`).join("")}</div></section>`;
+  if (t.kind !== "muscu") {
+    h += `<section class="card"><h3>Types d'entraînement</h3><p class="small muted">Séparés par des virgules (communs à toutes les séances de ${t.kind === "course" ? "course" : "boxe"}).</p>
+      <textarea id="t-subs" data-bind="t.subs">${esc(cfg()[subsKey].join(", "))}</textarea></section>`;
+  }
+  h += `<section class="card"><h3>Exercices habituels</h3><p class="small muted">Nom · séries · reps par défaut (utilisés seulement la première fois ; ensuite on reprend ta dernière séance).</p>
+    ${t.exercises.map((e, i) => `<div class="tpl-row"><input id="te-n-${i}" data-bind="te.${i}.name" value="${esc(e.name)}" aria-label="Nom"><input id="te-s-${i}" class="c" inputmode="numeric" data-bind="te.${i}.sets" data-v="int" value="${esc(e.sets)}" aria-label="Séries"><input id="te-r-${i}" class="c" inputmode="numeric" data-bind="te.${i}.reps" value="${esc(e.reps)}" aria-label="Répétitions">
+      <button data-act="tplmove" data-i="${i}" data-dir="-1" aria-label="Monter">${icon("up")}</button><button data-act="tplmove" data-i="${i}" data-dir="1" aria-label="Descendre">${icon("down")}</button><button data-act="tpldel" data-i="${i}" aria-label="Retirer">${icon("x")}</button></div>`).join("") || `<p class="empty">Aucun exercice pré-rempli.</p>`}
+    <button class="btn soft" data-act="tpladd">${icon("plus")} Ajouter un exercice</button></section>
+    <button class="btn danger block" data-act="deltype">${icon("trash")} Supprimer ce type de séance</button>
+    <p class="small muted">Supprimer un type ne supprime pas les séances déjà faites.</p>`;
+  return h;
+}
+function viewTrash() {
+  const items = Object.values(S.trash).sort((a, b) => b.at - a.at);
+  const kindLabel = { session: "Séance", exercise: "Exercice", week: "Semaine", type: "Type de séance" };
+  let h = `<div class="row"><button class="btn ghost sm" data-act="nav" data-view="plus">${icon("back")} Retour</button></div><h1>Corbeille</h1>
+    <p class="small muted">Ce que tu supprimes arrive ici et y reste jusqu'à ce que tu vides la corbeille.</p>`;
+  if (!items.length) return h + `<div class="card">${emptyArt("La corbeille est vide.")}</div>`;
+  h += `<section class="card"><div class="list">${items.map((t) => `<div class="li"><span class="grow"><b>${esc(t.label)}</b><br><span class="small muted">${esc(kindLabel[t.kind] || t.kind)} · supprimé le ${esc(fmtWhen(t.at))}</span></span>
+    <button class="btn sm soft" data-act="restore" data-id="${t.id}">Restaurer</button><button class="icon-btn" data-act="purge" data-id="${t.id}" aria-label="Supprimer définitivement">${icon("x")}</button></div>`).join("")}</div></section>
+    <button class="btn danger block" data-act="emptytrash">Vider la corbeille</button>`;
+  return h;
+}
+function syncCard() {
+  if (Store.provider === "claude" || window.claude) return "";
+  const conf = LS.get("carnet.firebase", null);
+  if (!conf) return `<section class="card"><h3>Synchroniser téléphone + ordi</h3>
+    <p class="small muted">Facultatif. Avec un projet Firebase gratuit (Google), tes données vont dans ta propre base et tu les retrouves sur tous tes appareils. Le guide d'installation explique comment le créer (10 min).</p>
+    <button class="btn soft" data-act="fbsetup">Configurer Firebase</button></section>`;
+  const u = Store.fbUser;
+  if (u) return `<section class="card"><h3>Synchronisation</h3><p class="small">Connecté : <b>${esc(u.email || "")}</b> · projet ${esc(conf.projectId)}</p>
+    <div class="grid2"><button class="btn ghost" data-act="fblogout">Se déconnecter</button><button class="btn ghost" data-act="fbremove">Désactiver</button></div></section>`;
+  return `<section class="card" id="fb-card"><h3>Connexion à ta base</h3><p class="small muted">Projet ${esc(conf.projectId)}. Même e-mail et mot de passe sur le téléphone et l'ordi.</p>
+    <label class="field">E-mail<input type="email" id="fb-email" autocomplete="username" inputmode="email"></label>
+    <label class="field">Mot de passe<input type="password" id="fb-pass" autocomplete="current-password"></label>
+    <div class="hint" id="fb-msg" hidden></div>
+    <div class="grid2"><button class="btn" data-act="fblogin">Se connecter</button><button class="btn ghost" data-act="fbsignup">Créer mon compte</button></div>
+    <div class="row"><button class="link" data-act="fbreset">Mot de passe oublié</button><span class="grow"></span><button class="link" data-act="fbremove">Désactiver la synchro</button></div></section>`;
+}
+function fbFields() {
+  const email = ($("#fb-email") || {}).value || ""; const pass = ($("#fb-pass") || {}).value || "";
+  return { email: email.trim(), pass };
+}
+function fbError(e) { const m = $("#fb-msg"); if (m) { m.hidden = false; m.textContent = authMsg(e); } else toast(authMsg(e), { error: true }); }
+let backupsCache = null;
+function viewBackups() {
+  let h = `<div class="row"><button class="btn ghost sm" data-act="nav" data-view="plus">${icon("back")} Retour</button></div><h1>Sauvegardes</h1>
+    <p class="small muted">Une sauvegarde complète est faite automatiquement une fois par jour et avant chaque grosse action (suppression de séance, import, restauration, vidage de corbeille). Restaurer remet tout comme à ce moment-là ; l'état actuel est sauvegardé juste avant, donc tu peux toujours revenir.</p>
+    <button class="btn soft" data-act="backupnow">${icon("plus")} Sauvegarder maintenant</button>`;
+  if (backupsCache == null) { loadBackups(); return h + `<div class="card"><p class="empty">Chargement…</p></div>`; }
+  if (!backupsCache.length) return h + `<div class="card"><p class="empty">Aucune sauvegarde pour l'instant.</p></div>`;
+  return h + `<section class="card"><div class="list">${backupsCache.map((b) => `<div class="li"><span class="grow"><b>${esc(fmtWhen(b.at))}</b><br><span class="small muted">${esc(b.reason)} · ${b.sessions} séances</span></span><button class="btn sm ghost" data-act="restorebackup" data-id="${b.id}">Restaurer</button></div>`).join("")}</div></section>`;
+}
+async function loadBackups() {
+  try { backupsCache = await listBackups(); } catch (e) { backupsCache = []; toast("Impossible de lire les sauvegardes pour l'instant.", { error: true }); }
+  if (S.ui.view === "sauvegardes") render();
+}
+
+/* ---- Rendu général ---- */
+function render() {
+  const v = S.ui.view;
+  try {
+    const html = { accueil: viewHome, seance: viewSession, historique: viewHistory, progres: viewProgress, semaine: viewWeek, plus: viewMore, types: viewTypes, corbeille: viewTrash, sauvegardes: viewBackups }[v] || viewHome;
+    $("#view").innerHTML = html();
+  } catch (e) {
+    console.error(e);
+    $("#view").innerHTML = `<div class="card"><h3>Oups, cet écran a eu un souci</h3><p class="small muted">Tes données ne sont pas touchées.</p><button class="btn" data-act="nav" data-view="accueil">Retour à l'accueil</button></div>`;
+  }
+  const tab = TAB_OF[v] || v;
+  $$("#tabs button").forEach((b) => b.setAttribute("aria-current", b.dataset.view === tab ? "page" : "false"));
+  autosizeAll(document);
+  drawCharts();
+  updateSyncChip();
+  updateThemeBtn();
+  renderBanner();
+}
+let needRender = false;
+const isTyping = () => { const a = document.activeElement; return !!a && a.closest && a.closest("#view") && (a.tagName === "TEXTAREA" || (a.tagName === "INPUT" && !["checkbox", "radio"].includes(a.type))); };
+function renderSoon() {
+  if (isTyping() || $("#modal-root").children.length) { needRender = true; return; }
+  needRender = false; requestAnimationFrame(render);
+}
+document.addEventListener("focusout", () => setTimeout(() => { if (needRender && !isTyping() && !$("#modal-root").children.length) { needRender = false; render(); } }, 120));
+
+function updateSyncChip() {
+  const el = $("#sync"); if (!el) return;
+  const n = Store.pending.size + Store.inflight.size;
+  let t = "Connexion…", cls = "";
+  if (Store.mode === "local") { t = "Sur cet appareil"; cls = ""; }
+  else if (Store.mode === "offline") { t = n || Object.keys(Store.outbox).length ? `Hors ligne · ${Object.keys(Store.outbox).length} en attente` : "Hors ligne"; cls = "warn"; }
+  else if (Store.mode === "cloud") {
+    if (!Store.ready) { t = "Connexion…"; cls = "busy"; }
+    else if (Store.backoff) { t = `Réseau lent · ${n} en attente`; cls = "warn"; }
+    else if (n) { t = "Enregistrement…"; cls = "busy"; }
+    else { t = "Synchronisé"; cls = "ok"; }
+  }
+  el.textContent = t; el.className = "sync " + cls;
+}
+function renderBanner() {
+  const b = $("#banner");
+  if (Store.mode === "offline" && Store.needLogin && S.ui.view === "plus") b.innerHTML = "";
+  else if (Store.mode === "offline") {
+    b.innerHTML = `<div role="status"><span></span>${Store.needLogin ? `<button class="btn sm soft" data-act="nav" data-view="plus">Se connecter</button>` : ""}</div>`;
+    b.querySelector("span").textContent = Store.offlineMsg;
+  }
+  else if (Store.mode === "cloud" && Store.slow && !Object.values(Store.defin).every(Boolean)) b.innerHTML = `<div role="status">La base met du temps à répondre : l'affichage vient de la copie de cet appareil et peut être incomplet.</div>`;
+  else b.innerHTML = "";
+}
+// Agrandit les zones de texte selon leur contenu
+function autosize(t) { if (!t || t.tagName !== "TEXTAREA" || t.classList.contains("export")) return; t.style.height = "auto"; t.style.height = t.scrollHeight + 2 + "px"; }
+function autosizeAll(root) { $$("textarea", root).forEach(autosize); }
+
+/* ---------------------------------------------------------------------
+   7. LES GRAPHIQUES (SVG fait main, avec infobulle au toucher)
+   --------------------------------------------------------------------- */
+const charts = {}; let chartSeq = 0;
+function chartBox(spec) { const id = "ch" + ++chartSeq; charts[id] = spec; return `<div class="chart" id="${id}" role="img" aria-label="${esc(spec.label || "Graphique")}"></div>`; }
+function drawCharts() {
+  for (const id of Object.keys(charts)) { const el = document.getElementById(id); if (!el) { delete charts[id]; continue; } try { charts[id].type === "bars" ? drawBars(el, charts[id]) : drawLine(el, charts[id]); } catch (e) { console.error(e); el.innerHTML = '<p class="empty">Graphique indisponible.</p>'; } }
+}
+let resizeT; window.addEventListener("resize", () => { clearTimeout(resizeT); resizeT = setTimeout(drawCharts, 150); });
+function niceTicks(min, max, count = 4) {
+  if (min === max) { const d = Math.abs(min) * 0.1 || 1; min -= d; max += d; }
+  const step0 = (max - min) / count; const mag = 10 ** Math.floor(Math.log10(step0)); const e = step0 / mag;
+  const step = (e >= 7.5 ? 10 : e >= 3.5 ? 5 : e >= 1.5 ? 2 : 1) * mag;
+  const lo = Math.floor(min / step) * step, hi = Math.ceil(max / step) * step; const ticks = [];
+  for (let v = lo; v <= hi + step * 1e-9; v += step) ticks.push(+v.toFixed(10));
+  return { lo, hi, ticks };
+}
+// Nombre de décimales selon l'écart entre graduations (évite "62, 62, 62…")
+function yLabel(spec, v, step) { return spec.fmt === "pace" ? fmtPace(v) : fmtNum(v, step < 0.1 ? 2 : step < 1 ? 1 : 0); }
+function drawLine(el, spec) {
+  const pts = spec.pts || [];
+  if (!pts.length) { el.innerHTML = `<p class="empty">Pas encore de données.</p>`; return; }
+  const W = Math.max(260, el.clientWidth), H = 210, m = { l: 44, r: 16, t: 26, b: 28 };
+  const tMin = Math.min(...pts.map((p) => p.t)), tMax = Math.max(...pts.map((p) => p.t));
+  const t0 = tMin === tMax ? tMin - 3 * DAY : tMin, t1 = tMin === tMax ? tMax + 3 * DAY : tMax;
+  const ys = pts.map((p) => p.y); const { lo, hi, ticks } = niceTicks(Math.min(...ys), Math.max(...ys));
+  const X = (t) => m.l + ((t - t0) / (t1 - t0)) * (W - m.l - m.r);
+  const Y = (v) => m.t + (1 - (v - lo) / (hi - lo || 1)) * (H - m.t - m.b);
+  const line = pts.map((p, i) => `${i ? "L" : "M"}${X(p.t).toFixed(1)},${Y(p.y).toFixed(1)}`).join("");
+  const area = `${line}L${X(pts[pts.length - 1].t).toFixed(1)},${H - m.b}L${X(pts[0].t).toFixed(1)},${H - m.b}Z`;
+  let g = "";
+  for (const v of ticks) g += `<line x1="${m.l}" x2="${W - m.r}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)" stroke-width="1"/><text x="${m.l - 8}" y="${Y(v) + 4}" text-anchor="end" font-size="12" fill="var(--ink-3)">${esc(yLabel(spec, v, ticks[1] - ticks[0]))}</text>`;
+  const nX = Math.min(4, Math.max(2, Math.floor((W - m.l - m.r) / 90)));
+  for (let i = 0; i < nX; i++) { const t = t0 + ((t1 - t0) * i) / (nX - 1); g += `<text x="${X(t)}" y="${H - 8}" text-anchor="${i === 0 ? "start" : i === nX - 1 ? "end" : "middle"}" font-size="12" fill="var(--ink-3)">${esc(new Date(t).toLocaleDateString("fr-FR", { day: "numeric", month: "short" }))}</text>`; }
+  const dots = pts.length <= 60 ? pts.map((p) => `<circle cx="${X(p.t)}" cy="${Y(p.y)}" r="3.5" fill="var(--accent)" stroke="var(--surface)" stroke-width="2"/>`).join("") : "";
+  const L = pts[pts.length - 1];
+  const lastLbl = `<circle cx="${X(L.t)}" cy="${Y(L.y)}" r="6" fill="var(--accent)" stroke="var(--surface)" stroke-width="2"/><text x="${Math.min(X(L.t), W - m.r)}" y="${Y(L.y) - 12}" text-anchor="end" font-size="13" font-weight="700" fill="var(--ink)">${esc(L.tip)}</text>`;
+  el.innerHTML = `<svg width="${W}" height="${H}" tabindex="0" aria-hidden="true">
+    <defs><linearGradient id="g${el.id}" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="var(--accent)" stop-opacity=".18"/><stop offset="1" stop-color="var(--accent)" stop-opacity="0"/></linearGradient></defs>
+    ${g}<path d="${area}" fill="url(#g${el.id})"/><path d="${line}" fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>${dots}${lastLbl}
+    <line class="xh" y1="${m.t}" y2="${H - m.b}" stroke="var(--ink-3)" stroke-width="1" stroke-dasharray="3 3" style="display:none"/><circle class="xd" r="6" fill="var(--accent)" stroke="var(--surface)" stroke-width="2" style="display:none"/>
+    <rect x="0" y="0" width="${W}" height="${H}" fill="transparent"/></svg><div class="tip"></div>`;
+  attachHover(el, pts.map((p) => ({ x: X(p.t), y: Y(p.y), tip: p.tip, sub: p.sub })), true);
+}
+function drawBars(el, spec) {
+  const items = spec.items || [];
+  const W = Math.max(260, el.clientWidth), H = 170, m = { l: 30, r: 8, t: 16, b: 26 };
+  const max = Math.max(1, ...items.map((i) => i.value)); const { hi, ticks } = niceTicks(0, max, Math.min(4, max));
+  const bw = (W - m.l - m.r) / items.length; const Y = (v) => m.t + (1 - v / hi) * (H - m.t - m.b);
+  let g = "";
+  for (const v of ticks) g += `<line x1="${m.l}" x2="${W - m.r}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)"/><text x="${m.l - 6}" y="${Y(v) + 4}" text-anchor="end" font-size="12" fill="var(--ink-3)">${v}</text>`;
+  const hits = [];
+  items.forEach((it, i) => {
+    const x = m.l + i * bw + 2, w = Math.max(4, bw - 4), y = Y(it.value), h = H - m.b - y, r = Math.min(4, w / 2, h);
+    if (it.value > 0) g += `<path d="M${x},${H - m.b}V${y + r}Q${x},${y} ${x + r},${y}H${x + w - r}Q${x + w},${y} ${x + w},${y + r}V${H - m.b}Z" fill="var(--accent)" opacity="${i === items.length - 1 ? 1 : 0.75}"/>`;
+    if (i % 3 === 2 || i === items.length - 1) g += `<text x="${x + w / 2}" y="${H - 8}" text-anchor="middle" font-size="11" fill="var(--ink-3)">${esc(it.label)}</text>`;
+    hits.push({ x: x + w / 2, y: Math.min(y, H - m.b - 4), tip: it.tip, sub: it.sub });
+  });
+  el.innerHTML = `<svg width="${W}" height="${H}" tabindex="0" aria-hidden="true">${g}<line class="xh" style="display:none"/><circle class="xd" style="display:none"/><rect width="${W}" height="${H}" fill="transparent"/></svg><div class="tip"></div>`;
+  attachHover(el, hits, false);
+}
+// Infobulle : on cherche le point le plus proche horizontalement du doigt / de la souris
+function attachHover(el, hits, cross) {
+  const svg = el.querySelector("svg"), tip = el.querySelector(".tip"), xh = svg.querySelector(".xh"), xd = svg.querySelector(".xd");
+  let cur = -1;
+  const show = (i) => {
+    if (i < 0 || !hits[i]) return; cur = i; const p = hits[i];
+    tip.innerHTML = "<b></b><span></span>"; tip.querySelector("b").textContent = p.tip; tip.querySelector("span").textContent = p.sub || "";
+    tip.style.display = "block"; const w = tip.offsetWidth;
+    tip.style.left = Math.max(w / 2, Math.min(el.clientWidth - w / 2, p.x)) + "px"; tip.style.top = Math.max(0, p.y - 10) + "px";
+    if (cross) { xh.setAttribute("x1", p.x); xh.setAttribute("x2", p.x); xh.style.display = ""; xd.setAttribute("cx", p.x); xd.setAttribute("cy", p.y); xd.style.display = ""; }
+  };
+  const hide = () => { tip.style.display = "none"; xh.style.display = "none"; xd.style.display = "none"; cur = -1; };
+  const nearest = (ev) => { const r = svg.getBoundingClientRect(); const x = ev.clientX - r.left; let bi = 0, bd = Infinity; hits.forEach((p, i) => { const d = Math.abs(p.x - x); if (d < bd) { bd = d; bi = i; } }); return bi; };
+  svg.addEventListener("pointermove", (ev) => show(nearest(ev)));
+  svg.addEventListener("pointerdown", (ev) => show(nearest(ev)));
+  svg.addEventListener("pointerleave", (ev) => { if (ev.pointerType === "mouse") hide(); });
+  svg.addEventListener("keydown", (ev) => { if (ev.key === "ArrowRight") show(Math.min(hits.length - 1, cur + 1)); else if (ev.key === "ArrowLeft") show(Math.max(0, cur < 0 ? hits.length - 1 : cur - 1)); });
+  svg.addEventListener("blur", hide);
+}
+
+/* ---------------------------------------------------------------------
+   8. LES ACTIONS
+   Un seul "écouteur" pour toute la page : chaque bouton porte un
+   data-act="…" qui dit quelle fonction appeler.
+   --------------------------------------------------------------------- */
+function go(view, push = true) {
+  if (!VIEWS.includes(view)) view = "accueil";
+  S.ui.view = view;
+  if (view === "seance") LS.set("carnet.open", S.ui.sessionId);
+  if (push && location.hash !== "#" + view) { try { history.pushState(null, "", "#" + view); } catch (e) { location.hash = view; } }
+  window.scrollTo(0, 0);
+  render();
+}
+window.addEventListener("popstate", () => fromHash());
+window.addEventListener("hashchange", () => fromHash());
+function fromHash() {
+  const h = (location.hash || "").slice(1);
+  const v = VIEWS.includes(h) ? h : "accueil";
+  if (v === "seance" && !S.ui.sessionId) S.ui.sessionId = LS.get("carnet.open", null);
+  if (v !== S.ui.view) { S.ui.view = v; window.scrollTo(0, 0); render(); }
+}
+function openSession(id) { S.ui.sessionId = id; go("seance"); }
+const findEx = (s, exId) => s && s.exercises.find((e) => e.id === exId);
+
+const actions = {
+  nav: (el) => { if (el.dataset.view === "sauvegardes") backupsCache = null; go(el.dataset.view); },
+  open: (el) => openSession(el.dataset.id),
+  theme: () => {
+    const dark = getComputedStyle(document.documentElement).colorScheme.includes("dark");
+    setMode(dark ? "light" : "dark");
+  },
+  setmode: (el) => setMode(el.dataset.mode),
+  storageinfo: () => { const mi = modeInfo(); openModal({ title: mi.title, body: `<p>${esc(mi.text)}</p>`, actions: [{ label: "OK" }] }); },
+
+  // --- Démarrer une séance ---
+  start: (el) => {
+    const typeId = el.dataset.type; const today = dateStr();
+    const open = sortedSessions().find((s) => s.typeId === typeId && s.date === today && !s.endedAt);
+    if (open) {
+      openModal({ title: "Séance déjà commencée", body: `<p>Tu as déjà une séance « ${esc(sessionName(open))} » en cours aujourd'hui.</p>`, actions: [
+        { label: "La reprendre", onClick: () => openSession(open.id) },
+        { label: "En commencer une nouvelle", kind: "ghost", onClick: () => startNew(typeId, today) },
+      ] });
+    } else startNew(typeId, today);
+  },
+  pastsession: () => {
+    const c = cfg();
+    openModal({ title: "Séance d'un autre jour", body: `<label class="field">Type<select id="m-type">${c.types.map((t) => `<option value="${t.id}">${esc(t.name)}</option>`).join("")}</select></label>
+      <label class="field">Date<input type="date" id="m-date" value="${dateStr(addDays(new Date(), -1))}" max="${dateStr()}"></label>`,
+      actions: [{ label: "Créer", onClick: () => { const d = $("#m-date").value; if (!isDateStr(d)) { $("#m-date").classList.add("invalid"); return false; } startNew($("#m-type").value, d); } }, { label: "Annuler", kind: "ghost" }] });
+  },
+  finish: () => {
+    const s = curSession(); if (!s) return;
+    // Durée de séance remplie automatiquement si tu ne l'as pas notée (séance du jour, moins de 5 h)
+    if (s.kind === "muscu" && !String(s.dur).trim() && s.date === dateStr()) {
+      const mins = Math.round((Date.now() - (s.createdAt || Date.now())) / 60000); const fin = s.finisher ? parseDur(s.finisher.dur) : null;
+      const v = mins - (ok(fin) ? Math.round(fin) : 0);
+      if (v >= 5 && v <= 300) s.dur = v >= 60 ? `${Math.floor(v / 60)}h${pad2(v % 60)}` : String(v);
+    }
+    s.endedAt = Date.now(); saveSession(s, 0);
+    const n = s.exercises.reduce((a, e) => a + filledSets(e).length, 0);
+    const tot = sessionDurations(s).total;
+    toast((s.kind === "muscu" ? `Bien joué ♥ ${n} série${n > 1 ? "s" : ""} enregistrée${n > 1 ? "s" : ""}` : "Bien joué ♥ Séance enregistrée") + (ok(tot) ? ` · ${fmtDur(tot)} au total` : ""));
+    go("accueil");
+  },
+  delsession: async () => {
+    const s = curSession(); if (!s) return;
+    if (!(await confirmBox("Supprimer la séance ?", `« ${sessionName(s)} » du ${fmtDay(s.date)} ira dans la corbeille. Tu pourras la restaurer.`))) return;
+    createBackup("Avant suppression d'une séance");
+    const tid = toTrash("session", `${sessionName(s)} · ${fmtDay(s.date)}`, s);
+    delete S.sessions[s.id]; sortedCache = null; persist("sessions", s.id, 0);
+    go("accueil");
+    undoToast("Séance supprimée", () => { restoreTrash(tid, true); openSession(s.id); });
+  },
+
+  // --- Exercices ---
+  addex: () => {
+    const s = curSession(); if (!s) return;
+    const t = typeOf(s); const inSession = new Set(s.exercises.map((e) => norm(e.name)));
+    const names = new Map();
+    (t ? t.exercises : []).forEach((e) => e.name && names.set(norm(e.name), e.name));
+    for (const x of sortedSessions()) for (const e of x.exercises) if (!names.has(norm(e.name))) names.set(norm(e.name), e.name);
+    for (const ty of cfg().types) for (const e of ty.exercises) if (e.name && !names.has(norm(e.name))) names.set(norm(e.name), e.name);
+    const sugg = [...names.entries()].filter(([k]) => !inSession.has(k)).slice(0, 40);
+    openModal({ title: "Ajouter un exercice", body: `<label class="field">Nom de l'exercice<input id="m-exname" autocomplete="off" placeholder="ex. Pompes"></label>
+      ${sugg.length ? `<span class="lbl">Suggestions</span><div class="sugg">${sugg.map(([, n]) => `<button type="button" class="chip" data-pick="${esc(n)}">${esc(n)}</button>`).join("")}</div>` : ""}
+      ${t ? `<label class="toggle"><input type="checkbox" id="m-addtpl"> L'ajouter aussi aux exercices habituels « ${esc(t.name)} »</label>` : ""}
+      <div class="hint" id="m-hint" hidden>Donne un nom à l'exercice.</div>`,
+      onOpen: (root) => {
+        root.querySelectorAll("[data-pick]").forEach((b) => (b.onclick = () => { $("#m-exname").value = b.dataset.pick; $("#m-exname").focus(); }));
+        $("#m-exname").addEventListener("keydown", (e) => { if (e.key === "Enter") root.querySelector(".actions .btn").click(); });
+      },
+      actions: [{ label: "Ajouter", onClick: () => {
+        const name = $("#m-exname").value.trim();
+        if (!name) { $("#m-hint").hidden = false; $("#m-exname").classList.add("invalid"); return false; }
+        const ex = buildExercise(name, null, s); s.exercises.push(ex); saveSession(s, 0);
+        if (t && $("#m-addtpl") && $("#m-addtpl").checked && !t.exercises.some((e) => norm(e.name) === norm(name))) { t.exercises.push({ name, sets: String(ex.sets.length), reps: ex.sets[0] ? ex.sets[0].treps : "" }); saveConfig(0); }
+        render(); setTimeout(() => { const c = document.getElementById("card-" + ex.id); c && c.scrollIntoView({ behavior: "smooth", block: "start" }); }, 50);
+      } }, { label: "Annuler", kind: "ghost" }] });
+  },
+  delex: async (el) => {
+    const s = curSession(); const ex = findEx(s, el.dataset.ex); if (!ex) return;
+    if (!(await confirmBox("Supprimer l'exercice ?", `« ${ex.name} » sera retiré de cette séance (récupérable dans la corbeille).`))) return;
+    const index = s.exercises.indexOf(ex);
+    const tid = toTrash("exercise", `${ex.name} (${sessionName(s)} · ${fmtShort(s.date)})`, ex, { sessionId: s.id, index });
+    s.exercises.splice(index, 1); saveSession(s, 0); render();
+    undoToast(`« ${ex.name} » supprimé`, () => restoreTrash(tid, true));
+  },
+  moveex: (el) => {
+    const s = curSession(); const ex = findEx(s, el.dataset.ex); if (!ex) return;
+    const i = s.exercises.indexOf(ex), j = i + +el.dataset.dir;
+    if (j < 0 || j >= s.exercises.length) return;
+    [s.exercises[i], s.exercises[j]] = [s.exercises[j], s.exercises[i]]; saveSession(s, 300); render();
+    const c = document.getElementById("card-" + ex.id); c && c.scrollIntoView({ block: "center" });
+  },
+  addset: (el) => {
+    const s = curSession(); const ex = findEx(s, el.dataset.ex); if (!ex) return;
+    const prev = ex.sets[ex.sets.length - 1];
+    // la nouvelle série reprend en gris les valeurs de la précédente
+    ex.sets.push({ kg: "", reps: "", done: false, tkg: prev ? prev.kg || prev.tkg : "", treps: prev ? prev.reps || prev.treps : "" });
+    saveSession(s, 300); render();
+  },
+  delset: (el) => {
+    const s = curSession(); const ex = findEx(s, el.dataset.ex); if (!ex) return;
+    const i = +el.dataset.i; const removed = ex.sets.splice(i, 1)[0]; saveSession(s, 300); render();
+    undoToast(`Série ${i + 1} retirée`, () => { const e2 = findEx(S.sessions[s.id], ex.id); if (!e2) return; e2.sets.splice(Math.min(i, e2.sets.length), 0, removed); saveSession(S.sessions[s.id], 0); render(); });
+  },
+  setdone: (el) => {
+    const s = curSession(); const ex = findEx(s, el.dataset.ex); if (!ex) return;
+    const st = ex.sets[+el.dataset.i]; if (!st) return;
+    // Valider une série vide = "j'ai fait l'objectif en gris"
+    st.done = !st.done;
+    if (st.done) { if (!String(st.kg).trim() && st.tkg) st.kg = st.tkg; if (!String(st.reps).trim() && st.treps) st.reps = st.treps; }
+    saveSession(s, 400); render();
+  },
+  quick: (el) => {
+    const s = curSession(); const ex = findEx(s, el.dataset.ex); if (!ex) return;
+    const txt = el.dataset.text;
+    if (!ex.note.includes(txt)) ex.note = ex.note.trim() ? ex.note.trim() + " · " + txt : txt;
+    if (txt === "Technique à revoir") ex.tech = true;
+    saveSession(s, 300); render();
+  },
+  rate: (el) => {
+    const s = curSession(); if (!s) return;
+    const tg = el.dataset.target; const v = +el.dataset.val;
+    if (tg === "s") s.rating = s.rating === v ? 0 : v;
+    else if (tg === "c") s.cardio.rating = s.cardio.rating === v ? 0 : v;
+    else { const ex = findEx(s, tg.slice(3)); if (ex) ex.rating = ex.rating === v ? 0 : v; }
+    saveSession(s, 300); render();
+  },
+  sub: (el) => { const s = curSession(); if (!s || !s.cardio) return; s.cardio.sub = el.dataset.val; saveSession(s, 300); render(); },
+  wmode: (el) => {
+    const s = curSession(); const ex = findEx(s, el.dataset.ex); if (!ex) return;
+    const m = el.dataset.m === "side" ? "side" : "total"; if (ex.wmode === m) return;
+    ex.wmode = m; saveSession(s, 300); render();
+    toast(m === "side" ? "Note maintenant le poids de chaque côté (le total est calculé pour toi)" : "Note maintenant le poids total");
+  },
+  addfin: () => {
+    const s = curSession(); if (!s) return;
+    s.finisher = { type: (cfg().finisherTypes || [])[0] || "", dur: "", dist: "", note: "", tdur: "" }; saveSession(s, 0); render();
+    setTimeout(() => { const f = document.getElementById("f-fdur"); f && f.scrollIntoView({ block: "center" }); }, 30);
+  },
+  delfin: () => {
+    const s = curSession(); if (!s || !s.finisher) return;
+    const old = clone(s.finisher); s.finisher = null; saveSession(s, 0); render();
+    undoToast("Cardio de fin retiré", () => { const s2 = S.sessions[s.id]; if (!s2) return; s2.finisher = old; saveSession(s2, 0); render(); });
+  },
+  fintype: (el) => { const s = curSession(); if (!s || !s.finisher) return; s.finisher.type = el.dataset.val; saveSession(s, 300); render(); },
+  calcdur: () => {
+    const s = curSession(); if (!s) return;
+    const mins = Math.round((Date.now() - (s.createdAt || Date.now())) / 60000);
+    const fin = s.finisher ? parseDur(s.finisher.dur) : null;
+    const v = Math.max(1, mins - (ok(fin) ? Math.round(fin) : 0));
+    s.dur = v >= 60 ? `${Math.floor(v / 60)}h${pad2(v % 60)}` : String(v); saveSession(s, 0); render();
+    toast(`Depuis le début : ${fmtDur(mins)}${ok(fin) ? " (cardio de fin déduit)" : ""}`);
+  },
+
+  // --- Historique ---
+  histtype: (el) => { S.ui.histType = el.dataset.type; S.ui.histDate = null; render(); },
+  calnav: (el) => {
+    const b = S.ui.calMonth ? parseDate(S.ui.calMonth) : new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+    S.ui.calMonth = dateStr(new Date(b.getFullYear(), b.getMonth() + +el.dataset.dir, 1)); render();
+  },
+  calday: (el) => {
+    const d = el.dataset.date; const list = sortedSessions().filter((s) => s.date === d && (S.ui.histType === "all" || s.typeId === S.ui.histType));
+    if (list.length === 1) return openSession(list[0].id);
+    if (list.length > 1) { S.ui.histDate = d; render(); return; }
+    if (d <= dateStr()) {
+      openModal({ title: fmtDay(d), body: `<p>Aucune séance ce jour-là. En ajouter une ?</p><label class="field">Type<select id="m-type">${cfg().types.map((t) => `<option value="${t.id}">${esc(t.name)}</option>`).join("")}</select></label>`,
+        actions: [{ label: "Ajouter", onClick: () => startNew($("#m-type").value, d) }, { label: "Fermer", kind: "ghost" }] });
+    }
+  },
+  clearday: () => { S.ui.histDate = null; render(); },
+
+  // --- Progrès ---
+  progtab: (el) => { S.ui.progTab = el.dataset.tab; render(); },
+  metric: (el) => { S.ui.progMetric = el.dataset.m; render(); },
+
+  // --- Semaine ---
+  weeknav: (el) => { S.ui.weekOffset = Math.min(0, S.ui.weekOffset + +el.dataset.dir); render(); },
+  gotoweek: (el) => { const m = parseDate(el.dataset.monday); S.ui.weekOffset = Math.round((m - mondayOf(new Date())) / (7 * DAY)); window.scrollTo(0, 0); render(); },
+  delweek: async (el) => {
+    const w = S.weeks[el.dataset.id]; if (!w) return;
+    if (!(await confirmBox("Effacer cette semaine ?", "Poids, alimentation et note de cette semaine iront dans la corbeille."))) return;
+    const tid = toTrash("week", `Semaine du ${fmtShort(w.monday)}`, w);
+    delete S.weeks[w.id]; persist("weeks", w.id, 0); render();
+    undoToast("Semaine effacée", () => restoreTrash(tid, true));
+  },
+
+  // --- Types de séance ---
+  edittype: (el) => { S.ui.editTypeId = el.dataset.id; go("types"); },
+  addtype: () => {
+    openModal({ title: "Nouveau type de séance", body: `<label class="field">Nom<input id="m-tname" placeholder="ex. Full body, Abdos, Natation…"></label>
+      <label class="field">Genre<select id="m-tkind">${Object.entries(KIND_LABEL).map(([k, l]) => `<option value="${k}">${esc(l)}</option>`).join("")}</select></label><div class="hint" id="m-hint" hidden>Donne un nom.</div>`,
+      actions: [{ label: "Créer", onClick: () => {
+        const name = $("#m-tname").value.trim(); if (!name) { $("#m-hint").hidden = false; $("#m-tname").classList.add("invalid"); return false; }
+        const c = cfg(); const used = new Set(c.types.map((t) => t.color)); const color = [1, 2, 3, 4, 5, 6, 7, 8].find((n) => !used.has(n)) || ((c.types.length % 8) + 1);
+        const t = { id: newId(), name, kind: $("#m-tkind").value, color, exercises: [] }; c.types.push(t); saveConfig(0);
+        S.ui.editTypeId = t.id; go("types");
+      } }, { label: "Annuler", kind: "ghost" }] });
+  },
+  typecolor: (el) => { const t = cfg().types.find((x) => x.id === S.ui.editTypeId); if (!t) return; t.color = +el.dataset.n; saveConfig(300); render(); },
+  tpladd: () => { const t = cfg().types.find((x) => x.id === S.ui.editTypeId); if (!t) return; t.exercises.push({ name: "", sets: "3", reps: "10" }); saveConfig(800); render(); const i = t.exercises.length - 1; setTimeout(() => { const n = document.getElementById("te-n-" + i); n && n.focus(); }, 30); },
+  tplmove: (el) => { const t = cfg().types.find((x) => x.id === S.ui.editTypeId); if (!t) return; const i = +el.dataset.i, j = i + +el.dataset.dir; if (j < 0 || j >= t.exercises.length) return; [t.exercises[i], t.exercises[j]] = [t.exercises[j], t.exercises[i]]; saveConfig(500); render(); },
+  tpldel: (el) => {
+    const t = cfg().types.find((x) => x.id === S.ui.editTypeId); if (!t) return; const i = +el.dataset.i; const removed = t.exercises.splice(i, 1)[0]; saveConfig(300); render();
+    undoToast(`« ${removed.name || "Exercice"} » retiré`, () => { const t2 = cfg().types.find((x) => x.id === t.id); if (!t2) return; t2.exercises.splice(Math.min(i, t2.exercises.length), 0, removed); saveConfig(0); render(); });
+  },
+  deltype: async () => {
+    const c = cfg(); const t = c.types.find((x) => x.id === S.ui.editTypeId); if (!t) return;
+    if (!(await confirmBox("Supprimer ce type ?", `« ${t.name} » disparaîtra de l'accueil (tes séances passées restent). Récupérable dans la corbeille.`))) return;
+    createBackup("Avant suppression d'un type de séance");
+    const index = c.types.indexOf(t); const tid = toTrash("type", `Type « ${t.name} »`, t, { index });
+    c.types.splice(index, 1); saveConfig(0); go("plus");
+    undoToast("Type supprimé", () => restoreTrash(tid, true));
+  },
+
+  // --- Corbeille ---
+  restore: (el) => { restoreTrash(el.dataset.id); render(); },
+  purge: async (el) => {
+    const t = S.trash[el.dataset.id]; if (!t) return;
+    if (!(await confirmBox("Supprimer définitivement ?", `« ${t.label} » sera effacé pour de bon.`))) return;
+    delete S.trash[t.id]; persist("trash", t.id, 0); render();
+  },
+  emptytrash: async () => {
+    const n = Object.keys(S.trash).length; if (!n) return;
+    if (!(await confirmBox("Vider la corbeille ?", `${n} élément${n > 1 ? "s" : ""} seront effacés. Une sauvegarde complète est faite juste avant.`, "Vider"))) return;
+    await createBackup("Avant vidage de la corbeille");
+    for (const id of Object.keys(S.trash)) { delete S.trash[id]; persist("trash", id, 0); }
+    render(); toast("Corbeille vidée");
+  },
+
+  // --- Sauvegardes ---
+  backupnow: async (el) => {
+    el.disabled = true; const m = await createBackup("Manuelle");
+    toast(m ? "Sauvegarde faite" : "La sauvegarde a échoué, réessaie plus tard.", { error: !m });
+    backupsCache = null; render();
+  },
+  restorebackup: async (el) => {
+    const b = (backupsCache || []).find((x) => x.id === el.dataset.id); if (!b) return;
+    if (!(await confirmBox("Restaurer cette sauvegarde ?", `Tout reviendra comme le ${fmtWhen(b.at)} (${b.sessions} séances). L'état actuel est sauvegardé juste avant.`, "Restaurer", false))) return;
+    try {
+      toast("Restauration en cours…");
+      const data = await readBackup(b.id);
+      await createBackup("Avant restauration");
+      replaceAll(data);
+      backupsCache = null; toast("Sauvegarde restaurée"); go("accueil");
+    } catch (e) { console.error(e); toast("Restauration impossible : sauvegarde illisible.", { error: true }); }
+  },
+
+  // --- Synchronisation Firebase ---
+  fbsetup: () => {
+    openModal({ title: "Configurer Firebase", body: `<p class="small">Colle ici la configuration de ton appli Web Firebase (le bloc <b>const firebaseConfig = { … }</b> copié depuis la console, tel quel).</p>
+      <textarea id="m-fbconf" placeholder="const firebaseConfig = {&#10;  apiKey: &quot;…&quot;,&#10;  projectId: &quot;…&quot;,&#10;  …&#10;};"></textarea><div class="hint" id="m-hint" hidden></div>`,
+      actions: [{ label: "Enregistrer", onClick: () => {
+        const conf = parseFirebaseConfig($("#m-fbconf").value);
+        if (!conf) { const h = $("#m-hint"); h.hidden = false; h.textContent = "Je ne reconnais pas cette configuration : il faut au moins apiKey, projectId et appId."; return false; }
+        LS.set("carnet.firebase", conf); createBackup("Avant activation de la synchro");
+        initFirebase(conf); toast("Configuration enregistrée. Connecte-toi ou crée ton compte.");
+      } }, { label: "Annuler", kind: "ghost" }] });
+  },
+  fblogin: async () => {
+    if (!Store.fbAuth) return toast("Firebase n'est pas chargé (réseau ?). Recharge la page.", { error: true });
+    const { email, pass } = fbFields();
+    try { await Store.fbAuth.signInWithEmailAndPassword(email, pass); toast("Connecté : synchronisation en cours"); } catch (e) { fbError(e); }
+  },
+  fbsignup: async () => {
+    if (!Store.fbAuth) return toast("Firebase n'est pas chargé (réseau ?). Recharge la page.", { error: true });
+    const { email, pass } = fbFields();
+    try { await Store.fbAuth.createUserWithEmailAndPassword(email, pass); toast("Compte créé : tes données sont envoyées dans ta base"); } catch (e) { fbError(e); }
+  },
+  fbreset: async () => {
+    if (!Store.fbAuth) return;
+    const { email } = fbFields();
+    if (!email) return fbError({ code: "auth/missing-email" });
+    try { await Store.fbAuth.sendPasswordResetEmail(email); toast("E-mail de réinitialisation envoyé"); } catch (e) { fbError(e); }
+  },
+  fblogout: async () => {
+    if (!(await confirmBox("Se déconnecter ?", "Tes données restent dans ta base. Sur cet appareil, la copie locale reste visible et tes nouvelles saisies seront envoyées à la reconnexion.", "Se déconnecter", false))) return;
+    flushAllNow(); try { await Store.fbAuth.signOut(); } catch (e) { console.warn(e); }
+  },
+  fbremove: async () => {
+    if (!(await confirmBox("Désactiver la synchro ?", "L'appli repassera en mode « ce navigateur seulement ». Tes données en ligne ne sont pas effacées : tu pourras te reconnecter plus tard.", "Désactiver", false))) return;
+    flushAllNow(); try { Store.fbAuth && (await Store.fbAuth.signOut()); } catch (e) {}
+    LS.del("carnet.firebase"); location.reload();
+  },
+
+  // --- Export / import ---
+  export: () => doExport(),
+  import: () => { const f = $("#importFile"); f.value = ""; f.click(); },
+};
+function startNew(typeId, date) {
+  const s = createSession(typeId, date); if (!s) return;
+  saveSession(s, 0); openSession(s.id);
+}
+function saveConfig(delay = 800) { cfg().updatedAt = Date.now(); persist("config", null, delay); }
+
+document.addEventListener("click", (ev) => {
+  const el = ev.target.closest("[data-act]");
+  if (!el || el.disabled) return;
+  const fn = actions[el.dataset.act];
+  if (fn) { ev.preventDefault(); try { fn(el, ev); } catch (e) { console.error(e); toast("Petit souci avec cette action. Rien n'est perdu.", { error: true }); } }
+});
+
+/* --- Saisie : chaque champ porte data-bind="…" qui dit où ranger la valeur --- */
+function validateField(el) {
+  const kind = el.dataset.v; if (!kind) return true;
+  const v = el.value; let bad = false;
+  if (kind === "num") { const n = parseNum(v); bad = Number.isNaN(n); }
+  if (kind === "int") { const n = parseNum(v); bad = Number.isNaN(n) || (n != null && (!Number.isInteger(n) || n < 0)); }
+  if (kind === "dur") { bad = Number.isNaN(parseDur(v)); }
+  el.classList.toggle("invalid", bad); el.setAttribute("aria-invalid", bad ? "true" : "false");
+  // Message sous le bloc concerné (on ne bloque jamais la saisie)
+  const card = el.closest(".card");
+  const hint = card && card.querySelector(".hint[data-hint]");
+  if (hint) {
+    const anyBad = card.querySelector(".invalid");
+    hint.hidden = !anyBad;
+    if (anyBad) hint.textContent = anyBad.dataset.v === "dur" ? "Durée non reconnue : écris par ex. 45, 32:30 ou 1h05. C'est gardé tel quel." : anyBad.dataset.v === "int" ? "Les répétitions / rounds doivent être un nombre entier. C'est gardé tel quel, mais ignoré dans les graphiques." : "Ce n'est pas un nombre (ex. 42,5). C'est gardé tel quel, mais ignoré dans les graphiques.";
+  }
+  return !bad;
+}
+// Met à jour les petits calculs affichés (allure, durée totale, charge totale) sans redessiner l'écran
+function updateDerived(s) {
+  const out = $("#paceOut"); if (out) { const st = cardioStats(s); out.textContent = ok(st.pace) ? `${fmtPace(st.pace)}/km · ${fmtNum(st.speed, 1)} km/h` : "–"; }
+  const d = $("#durOut"); if (d) d.innerHTML = durText(s);
+  for (const ex of s.exercises) { const t = document.getElementById("tot-" + ex.id); if (t) t.textContent = totLine(ex); }
+}
+function onBind(el, isChange) {
+  const b = el.dataset.bind; if (!b) return;
+  const val = el.type === "checkbox" ? el.checked : el.value;
+  const parts = b.split(".");
+  validateField(el);
+  if (parts[0] === "s" || parts[0] === "ex" || parts[0] === "set" || parts[0] === "c" || parts[0] === "fin") {
+    const s = curSession(); if (!s) return;
+    if (parts[0] === "fin") { if (!s.finisher) return; s.finisher[parts[1]] = val; updateDerived(s); saveSession(s); return; }
+    if (parts[0] === "s") {
+      if (parts[1] === "date") { if (!isDateStr(val)) return; s.date = val; saveSession(s, 300); if (isChange) render(); return; }
+      s[parts[1]] = val;
+    } else if (parts[0] === "set") {
+      const ex = findEx(s, parts[1]); const st = ex && ex.sets[+parts[2]]; if (!st) return; st[parts[3]] = val;
+    } else if (parts[0] === "ex") {
+      const ex = findEx(s, parts[1]); if (!ex) return;
+      if (parts[2] === "inc") { ex.inc[parts[3]] = val; if (parts[3] === "on") { saveSession(s, 300); render(); return; } }
+      else { ex[parts[2]] = val; if (parts[2] === "tech") { saveSession(s, 300); render(); return; } }
+    } else if (parts[0] === "c") {
+      if (!s.cardio) return;
+      if (parts[1] === "inc") { s.cardio.inc[parts[2]] = val; if (parts[2] === "on") { saveSession(s, 300); render(); return; } }
+      else s.cardio[parts[1]] = val;
+    }
+    updateDerived(s);
+    saveSession(s);
+    return;
+  }
+  if (parts[0] === "w") {
+    const mon = addDays(mondayOf(new Date()), 7 * S.ui.weekOffset); const wk = isoWeek(mon);
+    let w = S.weeks[wk.id];
+    if (!w) w = S.weeks[wk.id] = { id: wk.id, monday: dateStr(mon), weight: "", food: "", note: "", createdAt: Date.now(), updatedAt: Date.now() };
+    w[parts[1]] = val; w.updatedAt = Date.now(); persist("weeks", wk.id);
+    if (parts[1] === "weight") { needRender = true; } // la courbe se mettra à jour en quittant le champ
+    return;
+  }
+  if (parts[0] === "t" || parts[0] === "te" || parts[0] === "cfg") {
+    const c = cfg();
+    if (parts[0] === "cfg") {
+      if (parts[1] === "finisherTypes") c.finisherTypes = String(val).split(",").map((x) => x.trim()).filter(Boolean);
+      else c[parts[1]] = val;
+      saveConfig(); return;
+    }
+    const t = c.types.find((x) => x.id === S.ui.editTypeId); if (!t) return;
+    if (parts[0] === "t") {
+      if (parts[1] === "subs") { const list = String(val).split(",").map((x) => x.trim()).filter(Boolean); c[t.kind === "course" ? "runTypes" : "boxeTypes"] = list; }
+      else if (parts[1] === "name") t.name = val.trim() ? val : t.name;
+      else if (parts[1] === "kind") { t.kind = val; saveConfig(300); render(); return; }
+    } else { const e = t.exercises[+parts[1]]; if (!e) return; e[parts[2]] = val; }
+    saveConfig();
+  }
+}
+document.addEventListener("input", (ev) => {
+  const el = ev.target;
+  if (el.tagName === "TEXTAREA") autosize(el);
+  if (el.dataset && el.dataset.bind && el.type !== "checkbox" && el.tagName !== "SELECT" && el.type !== "date") { try { onBind(el, false); } catch (e) { console.error(e); } }
+});
+document.addEventListener("change", (ev) => {
+  const el = ev.target;
+  if (el.dataset && el.dataset.actChange === "progex") { S.ui.progEx = el.value; render(); return; }
+  if (el.dataset && el.dataset.bind && (el.type === "checkbox" || el.tagName === "SELECT" || el.type === "date")) { try { onBind(el, true); } catch (e) { console.error(e); } }
+  if (el.id === "importFile" && el.files && el.files[0]) handleImport(el.files[0]);
+});
+
+/* --- Thème --- */
+function setMode(m) {
+  LS.set("carnet.theme", m);
+  if (m === "auto") document.documentElement.removeAttribute("data-mode"); else document.documentElement.setAttribute("data-mode", m);
+  updateThemeBtn(); if (S.ui.view === "plus") render(); else drawCharts();
+}
+function updateThemeBtn() {
+  const dark = getComputedStyle(document.documentElement).colorScheme.includes("dark");
+  $("#themeBtn").innerHTML = icon(dark ? "sun" : "moon");
+}
+
+/* --- Export : fichier .json avec TOUT (séances, semaines, réglages, corbeille) --- */
+async function doExport() {
+  const c = cfg(); c.lastExportAt = Date.now();
+  const json = JSON.stringify(snapshotData(), null, 1);
+  const filename = `carnet-entrainement-${dateStr()}.json`;
+  const done = () => { saveConfig(0); toast("Export prêt : range le fichier en lieu sûr (Drive, mails…)"); if (S.ui.view === "plus" || S.ui.view === "accueil") render(); };
+  if (Store.dl) {
+    try { await Store.dl.save({ filename, data: json }); done(); return; }
+    catch (e) { if (e && e.code === "declined") { c.lastExportAt = null; return; } console.warn(e); }
+  } else if (!window.claude) {
+    // Sur téléphone : feuille de partage (Enregistrer dans Fichiers, Drive, mail…)
+    try {
+      const file = new File([json], filename, { type: "application/json" });
+      if (matchMedia("(pointer: coarse)").matches && navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: "Export carnet d'entraînement" }); done(); return;
+      }
+    } catch (e) { if (e && e.name === "AbortError") { c.lastExportAt = null; return; } console.warn(e); }
+    try { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([json], { type: "application/json" })); a.download = filename; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); done(); return; } catch (e) { console.warn(e); }
+  }
+  // Plan B : copier le texte
+  openModal({ title: "Exporter (copier)", body: `<p class="small">Le téléchargement n'est pas disponible ici. Copie ce texte et colle-le dans un fichier ou une note (nommé ${esc(filename)}).</p><textarea class="export" id="m-export" readonly>${esc(json)}</textarea>`,
+    actions: [{ label: "Copier", onClick: () => { navigator.clipboard.writeText(json).then(() => { done(); }, () => { const t = $("#m-export"); t.select(); toast("Sélectionné : fais Copier"); }); return false; } }, { label: "Fermer", kind: "ghost" }] });
+}
+/* --- Import : on lit le fichier, on vérifie, puis on propose fusionner / remplacer --- */
+async function handleImport(file) {
+  let data;
+  try { data = JSON.parse(await file.text()); }
+  catch (e) { toast("Ce fichier n'est pas un export valide (JSON illisible).", { error: true }); return; }
+  if (!data || typeof data !== "object" || !Array.isArray(data.sessions)) { toast("Ce fichier ne ressemble pas à un export du carnet.", { error: true }); return; }
+  const nS = data.sessions.length, nW = Array.isArray(data.weeks) ? data.weeks.length : 0;
+  openModal({ title: "Importer ce fichier ?", body: `<p>Il contient <b>${nS}</b> séances et <b>${nW}</b> semaines${data.exportedAt ? `, exportées le ${esc(new Date(data.exportedAt).toLocaleDateString("fr-FR"))}` : ""}.</p>
+    <p class="small muted"><b>Fusionner</b> : ajoute ce qui manque et garde la version la plus récente de chaque séance. <b>Tout remplacer</b> : l'appli devient exactement le fichier. Dans les deux cas, une sauvegarde est faite avant.</p>`,
+    actions: [
+      { label: "Fusionner", onClick: () => { applyImport(data, false); } },
+      { label: "Tout remplacer", kind: "danger", onClick: () => { applyImport(data, true); } },
+      { label: "Annuler", kind: "ghost" },
+    ] });
+}
+async function applyImport(data, replace) {
+  toast("Import en cours…");
+  await createBackup(replace ? "Avant import (remplacement)" : "Avant import (fusion)");
+  try {
+    if (replace) replaceAll(data);
+    else {
+      let n = 0;
+      for (const kind of KINDS) for (const raw of data[kind] || []) {
+        if (kind === "weeks") { const w = normWeek(raw); if (!w.id) continue; const cur = S.weeks[w.id]; if (!cur || w.updatedAt > (cur.updatedAt || 0)) { S.weeks[w.id] = w; persist("weeks", w.id, 50); n++; } continue; }
+        const x = NORMALIZERS[kind](raw); if (raw && raw.id) x.id = safeId(raw.id);
+        const cur = S[kind][x.id]; if (!cur || x.updatedAt > (cur.updatedAt || 0)) { S[kind][x.id] = x; persist(kind, x.id, 50); n++; }
+      }
+      if (data.config) { const ic = normConfig(data.config); const c = cfg(); for (const t of ic.types) if (!c.types.some((x) => x.id === t.id)) c.types.push(t); saveConfig(50); }
+      sortedCache = null; toast(`Import terminé : ${n} élément${n > 1 ? "s" : ""} ajouté${n > 1 ? "s" : ""} ou mis à jour.`);
+    }
+    render();
+  } catch (e) { console.error(e); toast("L'import a échoué. Tes données d'avant sont intactes (voir Sauvegardes).", { error: true }); }
+}
+// Remplace TOUT par les données fournies (import "remplacer" ou restauration)
+function replaceAll(data) {
+  const next = { sessions: {}, weeks: {}, trash: {} };
+  for (const raw of data.sessions || []) { const x = normSession(raw); if (raw && raw.id) x.id = safeId(raw.id); next.sessions[x.id] = x; }
+  for (const raw of data.weeks || []) { const w = normWeek(raw); if (w.id) next.weeks[w.id] = w; }
+  for (const raw of data.trash || []) { const x = normTrash(raw); next.trash[x.id] = x; }
+  const now = Date.now();
+  for (const kind of KINDS) {
+    for (const id of Object.keys(S[kind])) if (!next[kind][id]) { delete S[kind][id]; persist(kind, id, 50); }
+    for (const [id, v] of Object.entries(next[kind])) { v.updatedAt = Math.max(v.updatedAt || 0, now); S[kind][id] = v; persist(kind, id, 50); }
+  }
+  S.config = normConfig(data.config); S.config.updatedAt = now; persist("config", null, 50);
+  sortedCache = null;
+}
+
+// Avant de quitter / mettre l'appli en arrière-plan : on enregistre tout de suite
+function flushAllNow() { saveMirrorNow(); if (Store.mode !== "local") saveOutboxNow(); if (Store.mode === "cloud" && Store.ready && Store.pending.size) flush(); }
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") flushAllNow(); });
+window.addEventListener("pagehide", flushAllNow);
+window.addEventListener("online", () => { if (Store.mode === "cloud") { Store.backoff = 0; scheduleFlush(0); } });
+window.addEventListener("error", (e) => console.error("Erreur", e.error || e.message));
+
+/* ---------------------------------------------------------------------
+   9. LE DÉMARRAGE
+   --------------------------------------------------------------------- */
+async function boot() {
+  // icônes de la barre du bas
+  $$("[data-ico]").forEach((s) => { s.outerHTML = s.dataset.ico === "heartf" ? icon("heart", true) : icon(s.dataset.ico); });
+  const m = LS.get("carnet.theme", "auto"); if (m !== "auto") document.documentElement.setAttribute("data-mode", m);
+  // 1) on affiche tout de suite la copie de l'appareil
+  loadMirror();
+  // 2) on rejoue les modifs pas encore envoyées
+  const ob = LS.get("carnet.outbox", {});
+  for (const [key, e] of Object.entries(ob)) {
+    if (!e || !e.kind) continue;
+    Store.outbox[key] = { kind: e.kind, id: e.id, ts: e.ts || Date.now() };
+    if (e.kind === "config") { if (e.data) S.config = normConfig(e.data); }
+    else if (KINDS.includes(e.kind)) { if (e.data == null) delete S[e.kind][e.id]; else { const n = NORMALIZERS[e.kind](e.data); n.id = e.id; S[e.kind][e.id] = n; } }
+  }
+  const h = (location.hash || "").slice(1);
+  S.ui.view = VIEWS.includes(h) ? h : "accueil";
+  if (S.ui.view === "seance") S.ui.sessionId = LS.get("carnet.open", null);
+  if (S.ui.view === "types") S.ui.view = "plus";
+  render();
+  // 3) on cherche la base synchronisée de Claude
+  // Dans Claude, la page tourne dans un cadre (iframe) : on attend un peu que Claude se présente.
+  // Hébergée ailleurs (GitHub Pages…), pas d'attente.
+  let waited = 0; const framed = window.self !== window.top;
+  while (framed && !(window.claude && typeof window.claude.use === "function") && waited < 1500) { await sleep(100); waited += 100; }
+  if (window.claude && typeof window.claude.use === "function") {
+    try { await initCloud(); } catch (e) { console.error(e); goOffline("La synchronisation n'a pas pu démarrer. Tu travailles sur la copie de cet appareil."); }
+  } else {
+    registerSW();
+    const conf = LS.get("carnet.firebase", null);
+    if (conf) { initFirebase(conf); return; }
+    Store.mode = "local"; Store.ready = true; Store.outbox = {}; LS.del("carnet.outbox");
+    if (!S.config) { cfg(); saveMirrorSoon(); }
+    render(); dailyBackup();
+  }
+}
+// Service worker : garde l'appli en cache pour qu'elle s'ouvre même sans réseau (seulement si elle est hébergée)
+function registerSW() {
+  try {
+    if ("serviceWorker" in navigator && window.self === window.top && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register("sw.js").catch(() => {});
+  } catch (e) {}
+}
+boot();
+</script>
+</body>
+</html>
